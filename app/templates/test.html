@@ -1,0 +1,35 @@
+<form id="category">
+  <input type="radio" id="all" name="category" value="all" checked>
+  <label for="all">All</label>
+  <input type="radio" id="N5" name="category" value="N5">
+  <label for="N5">N5</label>
+  <input type="radio" id="N4" name="category" value="N4">
+  <label for="N4">N4</label>
+  <input type="radio" id="N3" name="category" value="N3">
+  <label for="N3">N3</label>
+  <input type="radio" id="N2" name="category" value="N2">
+  <label for="N2">N2</label>
+  <input type="radio" id="N1" name="category" value="N1">
+  <label for="N1">N1</label>
+  <br>
+  <input type="radio" id="bookmark" name="category" value="bookmark">
+  <label for="bookmark">我的書籤</label>
+  <input type="radio" id="custom" name="category" value="custom">
+  <label for="custom">自訂題目</label>
+</form>
+
+<h1 id="question">{{ .question }}</h1>
+
+<input type="text" id="yourAnswer" placeholder="請輸入片假名" autofocus>
+<span id="answer-tooltip">請輸入答案！</span>
+<br>
+
+<h2 id="solution"></h2>
+
+<p>上一題目：<span id="lastQuestion"> </span></p>
+<p>正確答案：<span id="lastAnswer"> </span></p>
+<p>您的答案：<span id="yourLastAnswer"> </span></p>
+<p>中文解釋：<span id="lastExplanation"> </span></p>
+
+<button type="button" id="add-bookmark-button">添加至我的書籤</button>
+<span id="bookmark-tooltip"></span>

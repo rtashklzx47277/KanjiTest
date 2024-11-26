@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>日文單字測驗</title>
+    <link rel="stylesheet" href="/static/css/index.css">
+    <script src="/static/js/index.js" defer></script>
+  </head>
+
+  <body>
+    <div id="sidebar">
+      <ul>
+        <li id="test-content">日文單字測驗</li>
+        <li id="bookmark-content">管理我的書籤</li>
+        <li id="custom-content">管理自訂題目</li>
+      </ul>
+      <div class="login-data">{{ .loginData }}</div>
+    </div>
+
+    <button type="button" id="toggle-button" class="expanded">關閉側邊選單</button>
+
+    <div id="main-content">
+      {{ template "test.html" . }}
+    </div>
+  </body>
+</html>

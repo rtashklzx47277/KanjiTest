@@ -1,0 +1,83 @@
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #222;
+  color: white;
+  text-align: center;
+}
+
+#container {
+  position: absolute;
+  top: 20%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 30vw;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+  background-color: #444;
+}
+
+#tabs {
+  display: flex;
+  margin-bottom: 20px;
+}
+
+#tabs button {
+  width: 100%;
+  padding: 10px;
+  border: none;
+  background-color: #555;
+  color: white;
+  transition: background-color 0.3s;
+  cursor: pointer;
+}
+
+#tabs button.active {
+  background-color: #777;
+}
+
+#tabs button:not(.active):hover {
+  background-color: #666;
+}
+
+#login-form,
+#signup-form {
+  display: none;
+}
+
+#login-form.active,
+#signup-form.active {
+  display: block;
+}
+
+input,
+button[type="submit"] {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 10px;
+  margin: 10px 0;
+  border: none;
+  border-radius: 5px;
+  background-color: #555;
+}
+
+input.error {
+  border: 2px solid red;
+  background-color: #ffe6e6;
+}
+
+p.message {
+  color:red;
+}
+
+button[type="submit"] {
+background-color: #4a90e2;
+color: white;
+transition: background-color 0.3s;
+cursor: pointer;
+}
+
+button[type="submit"]:hover {
+  background-color: #0056b3;
+}

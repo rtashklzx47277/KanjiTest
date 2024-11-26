@@ -1,0 +1,42 @@
+<h1>我的自訂題目</h1>
+<button type="button" id="create-custom-button">新增自訂題目</button>
+<br>
+<input type="text" id="custom-filter" placeholder="輸入關鍵字進行篩選">
+<table id="custom-table">
+  <thead>
+    <tr>
+      <th>問題</th>
+      <th>解答</th>
+      <th>解釋</th>
+      <th class="delete">刪除</th>
+    </tr>
+  </thead>
+  <tbody>
+    {{ range .customs }}
+    <tr>
+      <td>{{ .Question }}</td>
+      <td>{{ .Answer }}</td>
+      <td>{{ .Explanation }}</td>
+      <td class="delete">
+        <button type="button" class="delete-button" onclick="deleteData('deleteCustom', this, parseInt('{{ .Id }}'))">
+          🗑️
+        </button>
+      </td>
+    </tr>
+    {{ end }}
+  </tbody>
+</table>
+
+<div id="custom-layer">
+  <div id="custom-container">
+    <span id="close-icon">&times;</span>
+    <br>
+    <form id="custom-form">
+      <input type="text" id="custom-question" placeholder="問題">
+      <input type="text" id="custom-answer" placeholder="解答">
+      <input type="text" id="custom-explanation" placeholder="解釋">
+      <p class="message"></p>
+      <button type="submit" id="add-custom-button">新增題目</button>
+    </form>
+  </div>
+</div>

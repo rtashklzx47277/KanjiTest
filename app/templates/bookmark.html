@@ -1,0 +1,28 @@
+<h1>我的書籤</h1>
+<input type="text" id="bookmark-filter" placeholder="輸入關鍵字進行篩選">
+<table id="bookmark-table">
+  <thead>
+    <tr>
+      <th>類別</th>
+      <th>問題</th>
+      <th>解答</th>
+      <th>解釋</th>
+      <th class="delete">刪除</th>
+    </tr>
+  </thead>
+  <tbody>
+    {{ range .bookmarks }}
+    <tr>
+      <td>{{ .Category }}</td>
+      <td>{{ .Question }}</td>
+      <td>{{ .Answer }}</td>
+      <td>{{ .Explanation }}</td>
+      <td class="delete">
+        <button type="button" class="delete-button" onclick="deleteData('deleteBookmark', this, parseInt('{{ .Id }}'))">
+          🗑️
+        </button>
+      </td>
+    </tr>
+    {{ end }}
+  </tbody>
+</table>

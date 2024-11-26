@@ -1,0 +1,248 @@
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #222;
+  color: white;
+  text-align: center;
+}
+
+#sidebar {
+  position: fixed;
+  display: flex;
+  flex-direction: column; 
+  top: 0;
+  left: 0;
+  transform: translateX(0);
+  width: 15vw;
+  height: 100%;
+  background-color: #333;
+  transition: transform 0.3s ease;
+}
+
+#sidebar ul {
+  flex-grow: 1;
+}
+
+#sidebar.collapsed {
+  transform: translateX(-100%);
+}
+
+#sidebar li {
+  margin-top: 0.75em;
+}
+
+#sidebar .login-data {
+  margin-top: auto;
+  padding: 10px;
+}
+
+#toggle-button {
+  position: absolute;
+  top: 2.5vh;
+  left: 15vw;
+  padding: 5px;
+  border: none;
+  border-top-right-radius: 5px;
+  border-bottom-right-radius: 5px;
+  background-color: #4a90e2;
+  color: white;
+  writing-mode: vertical-rl;
+  text-orientation: upright;
+  letter-spacing: 0.5em;
+  transition: left 0.3s ease;
+  cursor: pointer;
+}
+
+#toggle-button.collapsed {
+  left: 0;
+}
+
+#toggle-button:hover {
+  background-color: #0056b3;
+}
+
+#main-content {
+  padding-top: 10vh;
+}
+
+#bookmark-filter,
+#custom-filter {
+  padding: 5px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+}
+
+#bookmark-filter::placeholder,
+#custom-filter::placeholder {
+  text-align: center;
+}
+
+table {
+  margin: auto;
+  margin-top: 20px;
+  width: 60%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  border: 1px solid #888;
+  padding: 10px;
+  text-align: left;
+  color: #eee;
+}
+
+th {
+  background-color: #333;
+  font-weight: bold;
+}
+
+tr:nth-child(even) {
+  background-color: #444;
+}
+
+tr:nth-child(odd) {
+  background-color: #555;
+}
+
+tr:hover {
+  background-color: #666;
+}
+
+.delete {
+  width: 0;
+}
+
+.delete-button {
+  background: none;
+  border: none;
+  color: #ff4d4d;
+  cursor: pointer;
+  font-size: 18px;
+}
+
+.delete-button:hover {
+  color: #ff1a1a;
+}
+
+#yourAnswer {
+  width: 20vw;
+  text-align: center;
+}
+
+#yourAnswer::placeholder {
+  text-align: center;
+}
+
+#answer-tooltip,
+#bookmark-tooltip {
+  display: none;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1;
+  margin-top: 4vh;
+  padding: 5px;
+  border: none;
+  border-radius: 5px;
+  background-color: #4a90e2;
+  color: white;
+}
+
+#solution {
+  min-height: 5vh;
+}
+
+#add-bookmark-button,
+#add-custom-button,
+#create-custom-button {
+  padding: 5px;
+  border: none;
+  border-radius: 5px;
+  background-color: #4a90e2;
+  color: white;
+  cursor: pointer;
+}
+
+#add-bookmark-button {
+  display: none;
+  margin: 0 auto; 
+}
+
+#create-custom-button {
+  margin-bottom: 10px; 
+}
+
+#add-bookmark-button,
+#add-custom-button,
+#create-custom-button {
+  background-color: #0056b3;
+}
+
+#custom-layer {
+  display: none;
+  position: fixed;
+  z-index: 1;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+#custom-container {
+  position: absolute;
+  top: 20%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 30vw;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+  background-color: #444;
+}
+
+#custom-form input,
+#add-custom-button {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 10px;
+  margin: 10px 0;
+  border: none;
+  border-radius: 5px;
+  background-color: #555;
+}
+
+#custom-form input.error {
+  border: 2px solid red;
+  background-color: #ffe6e6;
+}
+
+p.message {
+  color:red;
+}
+
+#add-custom-button {
+  background-color: #4a90e2;
+  color: white;
+  transition: background-color 0.3s;
+  cursor: pointer;
+}
+
+#add-custom-button:hover {
+  background-color: #0056b3;
+}
+
+#close-icon {
+  color: #aaa;
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+#close-icon:hover,
+#close-icon:focus {
+  color: #000;
+  text-decoration: none;
+}
