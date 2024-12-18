@@ -3,22 +3,7 @@ let bookmarkTimer
 const $ = (element) => document.querySelector(element)
 const $$ = (element) => document.querySelectorAll(element)
 
-$("#toggle-button").addEventListener("click", () => {
-  const sidebar = $("#sidebar")
-  const toggle = $("#toggle-button")
-
-  if (sidebar.classList.contains("collapsed")) {
-    sidebar.classList.remove("collapsed")
-    toggle.classList.remove("collapsed")
-    toggle.innerText = "關閉側邊選單"
-  } else {
-    sidebar.classList.add("collapsed")
-    toggle.classList.add("collapsed")
-    toggle.innerText = "開啟側邊選單"
-  }
-})
-
-$$("li[id]").forEach(element => {
+$$(".navbar button[id]").forEach(element => {
   element.addEventListener("click", (event) => {
     event.preventDefault()
 

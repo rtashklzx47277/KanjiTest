@@ -9,16 +9,16 @@
   </head>
 
   <body>
-    <div id="sidebar">
-      <ul>
-        <li id="test-content">日文單字測驗</li>
-        <li id="bookmark-content">管理我的書籤</li>
-        <li id="custom-content">管理自訂題目</li>
-      </ul>
-      <div class="login-data">{{ .loginData }}</div>
-    </div>
-
-    <button type="button" id="toggle-button" class="expanded">關閉側邊選單</button>
+    <header class="navbar">
+      <div class="nav-left">
+        <button id="test-content">日文單字測驗</button>
+        <button id="bookmark-content">管理我的書籤</button>
+        <button id="custom-content">管理自訂題目</button>
+      </div>
+      <div class="nav-right">
+        {{ .loginData }}
+      </div>
+    </header>
 
     <div id="main-content">
       {{ template "test.html" . }}

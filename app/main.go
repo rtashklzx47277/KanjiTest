@@ -47,9 +47,9 @@ func main() {
 		var loginData template.HTML
 		userName := sessions.Default(c).Get("UserName")
 		if userName != nil {
-			loginData = template.HTML(fmt.Sprintf(`<a>歡迎, <br>%v</a>`, userName))
+			loginData = template.HTML(fmt.Sprintf(`<button class="login-data">歡迎, %v</button>`, userName))
 		} else {
-			loginData = template.HTML(`<a href="/login">登入 / 註冊</a>`)
+			loginData = template.HTML(`<button class="login-data" onclick="window.location.href='/login';">登入 / 註冊</button>`)
 		}
 
 		id, question, answer, explanation = db.GetQuestion(category, id)
