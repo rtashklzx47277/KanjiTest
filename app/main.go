@@ -115,10 +115,16 @@ func checkAnswer(c *gin.Context) {
 		solution, color = "不正解！", "red"
 	}
 
+	userId := sessions.Default(c).Get("UserId")
+	userIdInt := 0
+
+	if userId != nil {
+		userIdInt = userId.(int)
+	}
+
 	tempQuestion, tempAnswer, tempExplanation := question, answer, explanation
-	userId := sessions.Default(c).Get("UserId").(int)
 	lastId = id
-	id, question, answer, explanation = db.GetQuestion(category, id, userId)
+	id, question, answer, explanation = db.GetQuestion(category, id, userIdInt)
 
 	c.JSON(http.StatusOK, gin.H{
 		"solution":        solution,
