@@ -25,6 +25,7 @@ services:
     depends_on:
       - db
     ports:
+      - 443:443
       - 3710:8080
     restart: always
     command: go run /app/.

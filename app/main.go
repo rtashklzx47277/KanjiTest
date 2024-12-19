@@ -31,8 +31,6 @@ func main() {
 		log.Fatalf("error connecting to pgSQL!\n%v", err)
 	}
 
-	fmt.Println("Web is ready!")
-
 	router := gin.Default()
 	router.Static("/static", "./static")
 	router.LoadHTMLGlob("templates/*")
@@ -71,7 +69,16 @@ func main() {
 	router.DELETE("/deleteBookmark/:id", deleteBookmark)
 	router.DELETE("/deleteCustom/:id", deleteCustom)
 
-	router.Run(":8080")
+	certFile := "/etc/ssl/cert.pem"
+	keyFile := "/etc/ssl/key.pem"
+
+	fmt.Println("Starting HTTPS server...")
+
+	if err := router.RunTLS(":443", certFile, keyFile); err != nil {
+		log.Fatalf("Failed to start server: %v", err)
+	}
+
+	fmt.Println("Web is ready!")
 }
 
 func changeCategory(c *gin.Context) {
