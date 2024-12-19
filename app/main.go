@@ -69,8 +69,8 @@ func main() {
 	router.DELETE("/deleteBookmark/:id", deleteBookmark)
 	router.DELETE("/deleteCustom/:id", deleteCustom)
 
-	certFile := "/etc/ssl/cert.pem"
-	keyFile := "/etc/ssl/key.pem"
+	certFile := "./cert.pem"
+	keyFile := "./key.pem"
 
 	fmt.Println("Starting HTTPS server...")
 
