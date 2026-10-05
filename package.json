@@ -1,0 +1,13 @@
+{
+  "name": "kanjitest",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "build": "node tools/build.mjs",
+    "dev": "node tools/serve.mjs",
+    "test": "node --test",
+    "deploy": "npm run test && npm run build && npx wrangler@4 pages deploy dist --project-name=kanjitest --branch=main"
+  }
+}

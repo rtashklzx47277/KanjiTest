@@ -1,2 +1,6 @@
 app/*.pem
 app/tmp/
+dist/
+.wrangler/
+node_modules/
+.env

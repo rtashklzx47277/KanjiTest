@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="日文單字測驗：N5、N4、N3 題庫、自訂單字與書籤。">
+  <title>KanjiTest｜日文單字測驗</title>
+  <link rel="stylesheet" href="/style.css">
+  <script id="builtin-words" type="application/json">{{BUILTIN_WORDS}}</script>
+  <script type="module" src="/app.js"></script>
+</head>
+<body>
+  <header class="navbar">
+    <a class="brand" href="/quiz">KanjiTest <span>日文單字測驗</span></a>
+    <nav aria-label="主選單">
+      <a href="/quiz" data-view="quiz">單字測驗</a>
+      <a href="/bookmarks" data-view="bookmarks">我的書籤 <span id="bookmark-count">0</span></a>
+      <a href="/words" data-view="words">自訂單字 <span id="custom-count">0</span></a>
+    </nav>
+  </header>
+  <main>
+    <p id="notice" class="notice" role="status" aria-live="polite" hidden></p>
+    <p id="storage-error" class="notice error" role="alert" hidden></p>
+    <section id="quiz-view" aria-labelledby="quiz-heading">
+      <div class="section-heading"><div><p class="eyebrow">每天練習一點</p><h1 id="quiz-heading">日文單字測驗</h1></div><span id="pool-count" class="badge"></span></div>
+      <fieldset id="category"><legend>題目分類</legend>
+        <label><input type="radio" name="category" value="all" checked>全部</label>
+        <label><input type="radio" name="category" value="N5">N5</label>
+        <label><input type="radio" name="category" value="N4">N4</label>
+        <label><input type="radio" name="category" value="N3">N3</label>
+        <label><input type="radio" name="category" value="bookmark">我的書籤</label>
+        <label><input type="radio" name="category" value="custom">自訂單字</label>
+      </fieldset>
+      <div class="quiz-card">
+        <p id="question-category" class="eyebrow"></p>
+        <h2 id="question" lang="ja"></h2>
+        <p id="empty-quiz" hidden>這個分類還沒有單字。可先新增自訂單字，或把答過的題目加入書籤。</p>
+        <form id="answer-form">
+          <label for="yourAnswer">讀音</label>
+          <div class="answer-row"><input id="yourAnswer" type="text" lang="ja" placeholder="輸入平假名或片假名" maxlength="200" autocomplete="off" autocapitalize="off" spellcheck="false" required><button id="answer-submit" type="submit">確認答案</button></div>
+        </form>
+      </div>
+      <div id="last-result" class="result-card" aria-live="polite" hidden>
+        <div class="section-heading"><h2 id="solution"></h2><button id="add-bookmark-button" type="button">加入書籤</button></div>
+        <dl><div><dt>上一題</dt><dd id="lastQuestion" lang="ja"></dd></div><div><dt>正確讀音</dt><dd id="lastAnswer" lang="ja"></dd></div><div><dt>你的答案</dt><dd id="yourLastAnswer" lang="ja"></dd></div><div><dt>中文解釋</dt><dd id="lastExplanation"></dd></div></dl>
+      </div>
+    </section>
+    <section id="bookmarks-view" aria-labelledby="bookmarks-heading" hidden>
+      <div class="section-heading"><div><p class="eyebrow">保留想複習的單字</p><h1 id="bookmarks-heading">我的書籤</h1></div><a class="button secondary" href="/quiz?category=bookmark">練習書籤</a></div>
+      <label class="search-label" for="bookmark-filter">搜尋書籤</label><input id="bookmark-filter" class="search" type="search" placeholder="搜尋單字、讀音或中文解釋">
+      <div class="table-scroll"><table id="bookmark-table"><caption class="sr-only">書籤單字</caption><thead><tr><th>分類</th><th>單字</th><th>讀音</th><th>中文解釋</th><th>操作</th></tr></thead><tbody></tbody></table></div>
+      <p id="bookmark-empty" class="empty" hidden></p>
+    </section>
+    <section id="words-view" aria-labelledby="words-heading" hidden>
+      <div class="section-heading"><div><p class="eyebrow">建立自己的題庫</p><h1 id="words-heading">自訂單字</h1></div><div class="actions"><a class="button secondary" href="/quiz?category=custom">練習自訂單字</a><button id="create-custom-button" type="button">新增單字</button></div></div>
+      <label class="search-label" for="custom-filter">搜尋自訂單字</label><input id="custom-filter" class="search" type="search" placeholder="搜尋單字、讀音或中文解釋">
+      <div class="table-scroll"><table id="custom-table"><caption class="sr-only">自訂單字</caption><thead><tr><th>單字</th><th>讀音</th><th>中文解釋</th><th>操作</th></tr></thead><tbody></tbody></table></div>
+      <p id="custom-empty" class="empty" hidden></p>
+    </section>
+  </main>
+  <footer>
+    <p>自訂單字與書籤保存在此瀏覽器，不需登入；更換裝置或清除網站資料前，可先匯出備份。</p>
+    <div class="actions"><button id="export-data" type="button" class="secondary">匯出備份</button><button id="import-data" type="button" class="secondary">匯入備份</button><input id="import-file" type="file" accept="application/json,.json" hidden></div>
+  </footer>
+  <dialog id="custom-dialog" aria-labelledby="custom-heading">
+    <div class="section-heading"><h2 id="custom-heading">新增自訂單字</h2><button id="close-dialog" class="secondary" type="button" aria-label="關閉新增單字視窗">關閉</button></div>
+    <form id="custom-form">
+      <label for="custom-question">單字</label><input id="custom-question" name="question" maxlength="200" placeholder="例如：図書館" required>
+      <label for="custom-answer">讀音</label><input id="custom-answer" name="answer" maxlength="200" placeholder="例如：としょかん" required>
+      <label for="custom-explanation">中文解釋</label><input id="custom-explanation" name="explanation" maxlength="500" placeholder="例如：圖書館" required>
+      <p id="custom-error" class="form-error" role="alert" hidden></p><button type="submit">儲存單字</button>
+    </form>
+  </dialog>
+</body>
+</html>
