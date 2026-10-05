@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="日文單字測驗：N5、N4、N3 題庫、自訂單字與書籤。">
+  <meta name="description" content="日文單字測驗：N1–N5 題庫、自訂單字與書籤。">
   <title>KanjiTest｜日文單字測驗</title>
   <link rel="stylesheet" href="/style.css">
   <script id="builtin-words" type="application/json">{{BUILTIN_WORDS}}</script>
@@ -17,6 +17,7 @@
       <a href="/bookmarks" data-view="bookmarks">我的書籤 <span id="bookmark-count">0</span></a>
       <a href="/words" data-view="words">自訂單字 <span id="custom-count">0</span></a>
     </nav>
+    <button id="open-settings" class="gear secondary" type="button" aria-label="設定" title="設定" aria-haspopup="dialog"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="m9 3-.6 2.1-1.8 1L4.5 6 3 8.6l1.6 1.6v2.1L3 14l1.5 2.6 2.1-.4 1.8 1L9 20h3l.6-2.8 1.8-1 2.1.4L18 14l-1.6-1.7v-2.1L18 8.6 16.5 6l-2.1.2-1.8-1L12 3Z" transform="translate(1.5 .5)"/><circle cx="12" cy="12" r="3"/></svg></button>
   </header>
   <main>
     <p id="notice" class="notice" role="status" aria-live="polite" hidden></p>
@@ -28,10 +29,12 @@
         <label><input type="radio" name="category" value="N5">N5</label>
         <label><input type="radio" name="category" value="N4">N4</label>
         <label><input type="radio" name="category" value="N3">N3</label>
+        <label><input type="radio" name="category" value="N2">N2</label>
+        <label><input type="radio" name="category" value="N1">N1</label>
         <label><input type="radio" name="category" value="bookmark">我的書籤</label>
         <label><input type="radio" name="category" value="custom">自訂單字</label>
       </fieldset>
-      <div class="quiz-card">
+      <div class="quiz-content"><div class="quiz-card">
         <p id="question-category" class="eyebrow"></p>
         <h2 id="question" lang="ja"></h2>
         <p id="empty-quiz" hidden>這個分類還沒有單字。可先新增自訂單字，或把答過的題目加入書籤。</p>
@@ -41,27 +44,40 @@
         </form>
       </div>
       <div id="last-result" class="result-card" aria-live="polite" hidden>
-        <div class="section-heading"><h2 id="solution"></h2><button id="add-bookmark-button" type="button">加入書籤</button></div>
+        <div class="section-heading"><h2 id="solution"></h2><div class="actions"><button id="result-details" class="secondary" type="button">詳細</button><button id="add-bookmark-button" type="button">加入書籤</button></div></div>
         <dl><div><dt>上一題</dt><dd id="lastQuestion" lang="ja"></dd></div><div><dt>正確讀音</dt><dd id="lastAnswer" lang="ja"></dd></div><div><dt>你的答案</dt><dd id="yourLastAnswer" lang="ja"></dd></div><div><dt>中文解釋</dt><dd id="lastExplanation"></dd></div></dl>
-      </div>
+      </div></div>
     </section>
     <section id="bookmarks-view" aria-labelledby="bookmarks-heading" hidden>
       <div class="section-heading"><div><p class="eyebrow">保留想複習的單字</p><h1 id="bookmarks-heading">我的書籤</h1></div><a class="button secondary" href="/quiz?category=bookmark">練習書籤</a></div>
       <label class="search-label" for="bookmark-filter">搜尋書籤</label><input id="bookmark-filter" class="search" type="search" placeholder="搜尋單字、讀音或中文解釋">
       <div class="table-scroll"><table id="bookmark-table"><caption class="sr-only">書籤單字</caption><thead><tr><th>分類</th><th>單字</th><th>讀音</th><th>中文解釋</th><th>操作</th></tr></thead><tbody></tbody></table></div>
       <p id="bookmark-empty" class="empty" hidden></p>
+      <div id="bookmark-pagination" class="pagination" hidden><button id="bookmark-prev" class="secondary" type="button">上一頁</button><span id="bookmark-page" aria-live="polite"></span><button id="bookmark-next" class="secondary" type="button">下一頁</button></div>
     </section>
     <section id="words-view" aria-labelledby="words-heading" hidden>
       <div class="section-heading"><div><p class="eyebrow">建立自己的題庫</p><h1 id="words-heading">自訂單字</h1></div><div class="actions"><a class="button secondary" href="/quiz?category=custom">練習自訂單字</a><button id="create-custom-button" type="button">新增單字</button></div></div>
       <label class="search-label" for="custom-filter">搜尋自訂單字</label><input id="custom-filter" class="search" type="search" placeholder="搜尋單字、讀音或中文解釋">
       <div class="table-scroll"><table id="custom-table"><caption class="sr-only">自訂單字</caption><thead><tr><th>單字</th><th>讀音</th><th>中文解釋</th><th>操作</th></tr></thead><tbody></tbody></table></div>
       <p id="custom-empty" class="empty" hidden></p>
+      <div id="custom-pagination" class="pagination" hidden><button id="custom-prev" class="secondary" type="button">上一頁</button><span id="custom-page" aria-live="polite"></span><button id="custom-next" class="secondary" type="button">下一頁</button></div>
     </section>
   </main>
-  <footer>
+  <dialog id="settings-dialog" aria-labelledby="settings-heading">
+    <div class="section-heading"><h2 id="settings-heading">設定</h2><button id="close-settings" class="secondary" type="button">關閉</button></div>
+    <h3>資料備份</h3>
     <p>自訂單字與書籤保存在此瀏覽器，不需登入；更換裝置或清除網站資料前，可先匯出備份。</p>
     <div class="actions"><button id="export-data" type="button" class="secondary">匯出備份</button><button id="import-data" type="button" class="secondary">匯入備份</button><input id="import-file" type="file" accept="application/json,.json" hidden></div>
-  </footer>
+    <h3>單字來源</h3>
+    <p>內建共 7,989 筆，涵蓋 N1–N5。擴充資料來自 <a href="https://github.com/tomoshi-app/tomoshi-dict-data" target="_blank" rel="noopener">Tomoshi Open Data</a>：JMdict © EDRDG、繁體中文翻譯 © Y1Z；分級源自 Jonathan Waller／yomitan-jlpt-vocab。</p>
+    <p class="source-note">N1–N5 為社群分級，僅供學習參考。新增中文解釋含 AI 輔助翻譯。資料經篩選、去重與格式轉換，以 <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">CC BY-SA 4.0</a> 分享。</p>
+    <div class="actions source-links"><a href="/vocabulary-notice.txt" target="_blank">完整來源說明</a><a href="/jlpt-extended.json" download>下載擴充資料</a></div>
+  </dialog>
+  <dialog id="word-dialog" aria-labelledby="word-heading">
+    <div class="section-heading"><h2 id="word-heading">單字詳細</h2><button id="close-word" class="secondary" type="button">關閉</button></div>
+    <p id="word-detail" class="word-detail"></p>
+    <div class="pagination"><button id="word-prev" class="secondary" type="button">上一頁</button><span id="word-page" aria-live="polite"></span><button id="word-next" class="secondary" type="button">下一頁</button></div>
+  </dialog>
   <dialog id="custom-dialog" aria-labelledby="custom-heading">
     <div class="section-heading"><h2 id="custom-heading">新增自訂單字</h2><button id="close-dialog" class="secondary" type="button" aria-label="關閉新增單字視窗">關閉</button></div>
     <form id="custom-form">

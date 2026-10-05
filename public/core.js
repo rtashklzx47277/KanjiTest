@@ -1,5 +1,5 @@
 export const STORAGE_KEY = 'kanjitest:data:v1';
-export const CATEGORIES = ['all', 'N5', 'N4', 'N3', 'bookmark', 'custom'];
+export const CATEGORIES = ['all', 'N5', 'N4', 'N3', 'N2', 'N1', 'bookmark', 'custom'];
 
 export function normalizeAnswer(value) {
   return value.normalize('NFKC').trim().replace(/\s+/gu, '')
@@ -40,7 +40,7 @@ export function validateState(input, builtins) {
   if (!input || input.version !== 1 || !Array.isArray(input.customWords) || !Array.isArray(input.bookmarkIds)) {
     throw new Error('資料格式或版本不正確。');
   }
-  if (input.customWords.length > 5000 || input.bookmarkIds.length > 6000) throw new Error('資料筆數超過上限。');
+  if (input.customWords.length > 5000 || input.bookmarkIds.length > builtins.length + 5000) throw new Error('資料筆數超過上限。');
   const knownIds = new Set(builtins.map((word) => word.id));
   const customWords = input.customWords.map((word) => {
     if (typeof word?.id !== 'string' || !/^custom:[a-zA-Z0-9-]{1,80}$/u.test(word.id) || knownIds.has(word.id)) {

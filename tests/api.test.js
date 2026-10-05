@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { handleApi } from '../lib/api.js';
-import words from '../data/words.js';
+import words from '../data/catalog.js';
 
 const request = (path, init) => new Request(`https://example.test${path}`, init);
 const post = (payload) => ({ method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(payload) });
@@ -11,9 +11,22 @@ test('GET vocabulary collection returns filtered and paginated representations',
   assert.equal(response.status, 200);
   assert.equal(response.headers.get('cache-control'), 'public, max-age=300');
   const payload = await response.json();
-  assert.equal(payload.total, 154);
+  assert.equal(payload.total, words.filter((word) => word.category === 'N4').length);
   assert.equal(payload.data.length, 2);
   assert.ok(payload.data.every((word) => word.category === 'N4'));
+});
+
+test('N1 and N2 collection resources and new-word answer checks work', async () => {
+  for (const category of ['N1', 'N2']) {
+    const response = await handleApi(request(`/api/words?category=${category}&limit=1`));
+    const payload = await response.json();
+    assert.equal(response.status, 200);
+    assert.ok(payload.total > 1000);
+    const word = payload.data[0];
+    assert.equal(word.category, category);
+    const result = await handleApi(request('/api/answer-checks', post({ wordId: word.id, answer: word.answer.split('/')[0] })));
+    assert.equal((await result.json()).data.correct, true);
+  }
 });
 test('GET individual word and HEAD use the same representation metadata', async () => {
   const path = `/api/words/${encodeURIComponent(words[0].id)}`;

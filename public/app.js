@@ -10,6 +10,24 @@ let lastResult = null;
 let category = 'all';
 let activeRequest = null;
 let checking = false;
+const tablePages = { bookmark: 0, custom: 0 };
+let detailPages = [], detailPage = 0;
+
+function renderDetail() {
+  $('#word-detail').textContent = detailPages[detailPage];
+  $('#word-page').textContent = `${detailPage + 1} / ${detailPages.length}`;
+  $('#word-prev').disabled = detailPage === 0;
+  $('#word-next').disabled = detailPage === detailPages.length - 1;
+}
+function openDetail(word) {
+  const text = `單字：${word.question}\n讀音：${word.answer}\n中文解釋：${word.explanation || '—'}`;
+  const characters = Array.from(text);
+  detailPages = [];
+  for (let i = 0; i < characters.length; i += 160) detailPages.push(characters.slice(i, i + 160).join(''));
+  detailPage = 0;
+  renderDetail();
+  $('#word-dialog').showModal();
+}
 
 function showNotice(message, isError = false) {
   const notice = $('#notice');
@@ -46,6 +64,7 @@ function renderQuiz() {
   $('#pool-count').textContent = `${words.length} 個單字`;
   for (const radio of document.querySelectorAll('input[name="category"]')) radio.checked = radio.value === category;
   $('#question').textContent = current?.question || '尚無單字';
+  $('#question').title = current?.question || '';
   $('#question-category').textContent = current?.category === 'custom' ? '自訂單字' : current?.category || '';
   $('#empty-quiz').hidden = !!current;
   $('#answer-form').hidden = !current;
@@ -71,13 +90,29 @@ function renderTable(kind) {
   const filter = $(`#${kind}-filter`).value.trim().toLocaleLowerCase();
   const visible = words.filter((word) => [word.category, word.question, word.answer, word.explanation].some((text) => text.toLocaleLowerCase().includes(filter)));
   const tbody = $(`#${kind}-table tbody`);
+  // Reserve space for the heading, filters, table header and page controls.
+  const available = document.querySelector('main').getBoundingClientRect().bottom - $(`#${kind}-table`).parentElement.getBoundingClientRect().top - 110;
+  const pageSize = Math.max(1, Math.floor(available / (innerWidth <= 650 ? 88 : 72)));
+  const pageCount = Math.max(1, Math.ceil(visible.length / pageSize));
+  tablePages[kind] = Math.min(tablePages[kind], pageCount - 1);
   tbody.replaceChildren();
-  for (const word of visible) {
+  for (const word of visible.slice(tablePages[kind] * pageSize, (tablePages[kind] + 1) * pageSize)) {
     const row = document.createElement('tr');
     const fields = isBookmark ? [word.category === 'custom' ? '自訂' : word.category, word.question, word.answer, word.explanation] : [word.question, word.answer, word.explanation];
-    for (const text of fields) {
+    for (const [index, text] of fields.entries()) {
       const cell = document.createElement('td');
-      cell.textContent = text;
+      cell.dataset.label = (isBookmark ? ['分類', '單字', '讀音', '中文解釋'] : ['單字', '讀音', '中文解釋'])[index];
+      const content = document.createElement(index === (isBookmark ? 1 : 0) ? 'button' : 'span');
+      content.textContent = text || '—';
+      content.title = text;
+      content.className = 'cell-content';
+      if (content.tagName === 'BUTTON') {
+        content.type = 'button';
+        content.classList.add('word-link');
+        content.setAttribute('aria-label', `單字詳細：${word.question}`);
+        content.addEventListener('click', () => openDetail(word));
+      }
+      cell.append(content);
       row.append(cell);
     }
     const cell = document.createElement('td');
@@ -96,6 +131,10 @@ function renderTable(kind) {
   empty.hidden = visible.length > 0;
   empty.textContent = words.length ? '沒有符合搜尋的單字。' : isBookmark ? '還沒有書籤。答題後可以把想複習的單字加入這裡。' : '還沒有自訂單字。點「新增單字」建立自己的題庫。';
   $(`#${kind}-table`).hidden = !visible.length;
+  $(`#${kind}-pagination`).hidden = !visible.length;
+  $(`#${kind}-page`).textContent = `${tablePages[kind] + 1} / ${pageCount} · ${visible.length} 筆`;
+  $(`#${kind}-prev`).disabled = tablePages[kind] === 0;
+  $(`#${kind}-next`).disabled = tablePages[kind] === pageCount - 1;
 }
 function renderRoute() {
   const path = location.pathname.replace(/\/$/u, '') || '/quiz';
@@ -183,7 +222,17 @@ $('#answer-form').addEventListener('submit', async (event) => {
 $('#add-bookmark-button').addEventListener('click', () => {
   if (lastResult) mutate(() => repository.addBookmark(lastResult.wordId), '已加入書籤。');
 });
-for (const kind of ['bookmark', 'custom']) $(`#${kind}-filter`).addEventListener('input', () => renderTable(kind));
+for (const kind of ['bookmark', 'custom']) {
+  $(`#${kind}-filter`).addEventListener('input', () => { tablePages[kind] = 0; renderTable(kind); });
+  for (const [direction, change] of [['prev', -1], ['next', 1]]) $(`#${kind}-${direction}`).addEventListener('click', () => { tablePages[kind] += change; renderTable(kind); });
+}
+window.addEventListener('resize', renderRoute);
+$('#open-settings').addEventListener('click', () => $('#settings-dialog').showModal());
+$('#close-settings').addEventListener('click', () => $('#settings-dialog').close());
+$('#close-word').addEventListener('click', () => $('#word-dialog').close());
+$('#word-prev').addEventListener('click', () => { detailPage--; renderDetail(); });
+$('#word-next').addEventListener('click', () => { detailPage++; renderDetail(); });
+$('#result-details').addEventListener('click', () => { if (lastResult) openDetail(lastResult); });
 $('#create-custom-button').addEventListener('click', () => {
   $('#custom-form').reset();
   $('#custom-error').hidden = true;
@@ -217,8 +266,9 @@ $('#import-file').addEventListener('change', async (event) => {
   try {
     if (file.size > 2 * 1024 * 1024) throw new Error('備份檔不可超過 2 MB。');
     const input = JSON.parse(await file.text());
+    $('#settings-dialog').close();
     mutate(() => repository.importData(input), '已合併匯入備份，原有單字與書籤已保留。');
-  } catch (error) { showNotice(errorMessage(error), true); }
+  } catch (error) { $('#settings-dialog').close(); showNotice(errorMessage(error), true); }
   finally { event.target.value = ''; }
 });
 window.addEventListener('storage', (event) => {
