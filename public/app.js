@@ -1,16 +1,19 @@
-import { STORAGE_KEY, CATEGORIES, LocalRepository, checkAnswer, selectQuestion } from './core.js';
+import { STORAGE_KEY, CATEGORIES, LocalRepository, checkAnswer } from './core.js';
 
 const $ = (selector) => document.querySelector(selector);
 const builtins = JSON.parse($('#builtin-words').textContent);
 let storage;
 try { storage = window.localStorage; } catch { storage = null; }
 let repository = new LocalRepository(builtins, storage);
+// If browser storage is unavailable, a round still works for this tab only.
+const memoryStorage = () => ({ raw: null, getItem() { return this.raw; }, setItem(key, value) { this.raw = value; } });
+let practice = repository.readOnly ? new LocalRepository(builtins, memoryStorage()) : repository;
 let current = null;
 let lastResult = null;
 let category = 'all';
 let activeRequest = null;
 let checking = false;
-const tablePages = { bookmark: 0, custom: 0, history: 0 };
+const tablePages = { bookmark: 0, custom: 0, history: 0, round: 0 };
 let detailPages = [], detailPage = 0;
 
 function renderDetail() {
@@ -56,22 +59,41 @@ function updateCounts() {
   error.textContent = repository.readOnly ? '無法讀取本機儲存資料。原有內容未被覆寫；仍可練習內建題庫，請先檢查瀏覽器儲存權限或資料格式。' : '';
 }
 function pool() { return repository.wordsIn(category); }
-function nextQuestion() {
-  current = selectQuestion(pool(), current?.id);
-  $('#yourAnswer').value = '';
-}
 function renderQuiz() {
   const words = pool();
-  if (!current || !words.some((word) => word.id === current.id)) nextQuestion();
+  const round = practice.state.round;
+  const completed = round && round.position === round.words.length;
+  $('#quiz-setup').hidden = !!round;
+  $('#round-play').hidden = !round || completed;
+  $('#round-summary').hidden = !completed;
   $('#pool-count').textContent = `${words.length} 個單字`;
   for (const radio of document.querySelectorAll('input[name="category"]')) radio.checked = radio.value === category;
+  const count = Number($('#round-count').value);
+  $('#pool-note').textContent = !words.length ? '這個分類還沒有單字，可先加入書籤或新增自訂單字。'
+    : count > words.length ? `題庫只有 ${words.length} 個單字，本輪將出 ${words.length} 題，單字不重複。` : '同一輪單字不重複。';
+  $('#start-quiz').disabled = !words.length;
+  if (!round) { current = null; lastResult = null; return; }
+  if (completed) {
+    const correct = round.results.filter(item => item.correct).length;
+    $('#round-score').textContent = `正確率 ${(correct / round.results.length * 100).toFixed(1)}%`;
+    $('#round-totals').textContent = `${round.review ? '錯題複習 · ' : ''}${round.category === 'all' ? '全部' : round.category === 'bookmark' ? '我的書籤' : round.category === 'custom' ? '自訂單字' : round.category} · ${round.results.length} 題 · 正確 ${correct} · 錯誤 ${round.results.length - correct}`;
+    $('#retry-wrong').disabled = correct === round.results.length;
+    renderHistory('round');
+    return;
+  }
+  const next = round.words[round.position];
+  if (current?.id !== next.id) $('#yourAnswer').value = '';
+  current = next;
+  lastResult = round.results[round.position] ?? null;
+  if (lastResult) $('#yourAnswer').value = lastResult.submitted;
+  $('#round-progress').textContent = `${round.review ? '錯題複習 · ' : ''}第 ${round.position + 1} / ${round.words.length} 題`;
   $('#question').textContent = current?.question || '尚無單字';
   $('#question').title = current?.question || '';
   $('#question-category').textContent = current?.category === 'custom' ? '自訂單字' : current?.category || '';
   $('#empty-quiz').hidden = !!current;
   $('#answer-form').hidden = !current;
-  $('#answer-submit').disabled = checking;
-  $('#yourAnswer').disabled = checking;
+  $('#answer-submit').disabled = checking || !!lastResult;
+  $('#yourAnswer').disabled = checking || !!lastResult;
   $('#last-result').hidden = !lastResult;
   if (lastResult) {
     $('#solution').textContent = lastResult.correct ? '正解！' : '再記住一次';
@@ -84,7 +106,32 @@ function renderQuiz() {
     const missing = !repository.getWord(lastResult.wordId);
     $('#add-bookmark-button').textContent = bookmarked ? '已加入書籤' : '加入書籤';
     $('#add-bookmark-button').disabled = bookmarked || missing || repository.readOnly;
+    $('#next-question').textContent = round.position === round.words.length - 1 ? '查看本輪結果' : '下一題';
   }
+}
+
+function startRound({ review = false, words, count = Number($('#round-count').value), selectedCategory = category } = {}) {
+  cancelCheck();
+  try {
+    practice.startRound(selectedCategory, count, { review, words });
+    category = selectedCategory;
+    history.replaceState(null, '', `/quiz?category=${encodeURIComponent(category)}`);
+    tablePages.round = 0;
+    $('#yourAnswer').value = '';
+    showNotice(repository.readOnly ? '本輪僅在此分頁暫存，重新整理後無法保留。' : '');
+    renderRoute();
+    $('#yourAnswer').focus();
+  } catch (error) { showNotice(errorMessage(error), true); }
+}
+function returnToSetup() {
+  cancelCheck();
+  try {
+    const round = practice.state.round;
+    if (round) { category = round.category; $('#round-count').value = round.requestedCount; }
+    practice.clearRound();
+    showNotice('');
+    renderRoute();
+  } catch (error) { showNotice(errorMessage(error), true); }
 }
 function renderTable(kind) {
   const isBookmark = kind === 'bookmark';
@@ -138,20 +185,20 @@ function renderTable(kind) {
   $(`#${kind}-prev`).disabled = tablePages[kind] === 0;
   $(`#${kind}-next`).disabled = tablePages[kind] === pageCount - 1;
 }
-function renderHistory() {
-  const history = repository.history;
-  $('#history-summary').textContent = `${history.length} 題 · 正確 ${history.filter(item => item.correct).length}`;
-  const available = document.querySelector('main').getBoundingClientRect().bottom - $('#history-table').parentElement.getBoundingClientRect().top - 110;
+function renderHistory(kind = 'history') {
+  const history = kind === 'round' ? practice.state.round.results : repository.history;
+  if (kind === 'history') $('#history-summary').textContent = `${history.length} 題 · 正確 ${history.filter(item => item.correct).length}`;
+  const available = document.querySelector('main').getBoundingClientRect().bottom - $(`#${kind}-table`).parentElement.getBoundingClientRect().top - 110;
   const pageSize = Math.max(1, Math.floor(available / (innerWidth <= 650 ? 144 : 72)));
   const pageCount = Math.max(1, Math.ceil(history.length / pageSize));
-  tablePages.history = Math.min(tablePages.history, pageCount - 1);
-  const tbody = $('#history-table tbody');
+  tablePages[kind] = Math.min(tablePages[kind], pageCount - 1);
+  const tbody = $(`#${kind}-table tbody`);
   tbody.replaceChildren();
-  for (const item of history.slice(tablePages.history * pageSize, (tablePages.history + 1) * pageSize)) {
+  for (const [offset, item] of history.slice(tablePages[kind] * pageSize, (tablePages[kind] + 1) * pageSize).entries()) {
     const row = document.createElement('tr');
     const date = new Date(item.answeredAt);
     const time = new Intl.DateTimeFormat('zh-TW', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }).format(date);
-    const fields = [time, item.question, item.correct ? '正確' : '錯誤', item.submitted, item.answer];
+    const fields = [kind === 'round' ? `${tablePages[kind] * pageSize + offset + 1}` : time, item.question, item.correct ? '正確' : '錯誤', item.submitted, item.answer];
     for (const [index, text] of fields.entries()) {
       const cell = document.createElement('td');
       const content = document.createElement(index === 1 ? 'button' : 'span');
@@ -182,20 +229,22 @@ function renderHistory() {
     row.append(cell);
     tbody.append(row);
   }
-  $('#history-empty').hidden = !!history.length;
-  $('#history-table').hidden = !history.length;
-  $('#history-pagination').hidden = !history.length;
-  $('#history-page').textContent = `${tablePages.history + 1} / ${pageCount} · ${history.length} 題`;
-  $('#history-prev').disabled = tablePages.history === 0;
-  $('#history-next').disabled = tablePages.history === pageCount - 1;
+  if (kind === 'history') $('#history-empty').hidden = !!history.length;
+  $(`#${kind}-table`).hidden = !history.length;
+  $(`#${kind}-pagination`).hidden = !history.length;
+  $(`#${kind}-page`).textContent = `${tablePages[kind] + 1} / ${pageCount} · ${history.length} 題`;
+  $(`#${kind}-prev`).disabled = tablePages[kind] === 0;
+  $(`#${kind}-next`).disabled = tablePages[kind] === pageCount - 1;
 }
 function renderRoute() {
   const path = location.pathname.replace(/\/$/u, '') || '/quiz';
   const view = path === '/bookmarks' ? 'bookmarks' : path === '/words' ? 'words' : path === '/history' ? 'history' : 'quiz';
-  const nextCategory = new URLSearchParams(location.search).get('category') || 'all';
-  if (view === 'quiz' && category !== nextCategory) {
-    category = CATEGORIES.includes(nextCategory) ? nextCategory : 'all';
-    current = null;
+  const queryCategory = new URLSearchParams(location.search).get('category');
+  if (view === 'quiz') {
+    category = CATEGORIES.includes(queryCategory) ? queryCategory : practice.state.round?.category ?? category;
+    if (practice.state.round && category !== practice.state.round.category) {
+      try { practice.clearRound(); } catch (error) { category = practice.state.round.category; showNotice(errorMessage(error), true); }
+    }
   }
   for (const name of ['quiz', 'bookmarks', 'words', 'history']) $(`#${name}-view`).hidden = view !== name;
   for (const link of document.querySelectorAll('nav a[data-view]')) {
@@ -230,9 +279,26 @@ window.addEventListener('popstate', () => { cancelCheck(); renderRoute(); });
 $('#category').addEventListener('change', (event) => {
   if (event.target.name === 'category') navigate(`/quiz?category=${encodeURIComponent(event.target.value)}`);
 });
+$('#round-count').addEventListener('input', renderQuiz);
+$('#quiz-setup').addEventListener('submit', event => { event.preventDefault(); startRound(); });
+for (const id of ['change-setup', 'reselect-round']) $('#' + id).addEventListener('click', returnToSetup);
+$('#next-question').addEventListener('click', () => {
+  try { practice.advanceRound(); $('#yourAnswer').value = ''; renderQuiz(); if (!$('#round-play').hidden) $('#yourAnswer').focus(); }
+  catch (error) { showNotice(errorMessage(error), true); }
+});
+$('#retry-wrong').addEventListener('click', () => {
+  const round = practice.state.round;
+  const wrongIds = new Set(round.results.filter(item => !item.correct).map(item => item.wordId));
+  const words = round.words.filter(word => wrongIds.has(word.id));
+  startRound({ review: true, words, count: round.requestedCount, selectedCategory: round.category });
+});
+$('#another-round').addEventListener('click', () => {
+  const round = practice.state.round;
+  startRound({ count: round.requestedCount, selectedCategory: round.category });
+});
 $('#answer-form').addEventListener('submit', async (event) => {
   event.preventDefault();
-  if (!current || checking) return;
+  if (!current || checking || lastResult) return;
   const answer = $('#yourAnswer').value.trim();
   if (!answer) return;
   const word = current;
@@ -260,12 +326,10 @@ $('#answer-form').addEventListener('submit', async (event) => {
       }
     }
     if (activeRequest !== controller) return;
+    // Local canonical grading is the same as the stateless API; save all changes atomically.
+    practice.recordAttempt(word, answer);
     lastResult = result;
-    if (!repository.readOnly) {
-      try { repository.recordAttempt(word, answer); updateCounts(); }
-      catch (error) { showNotice(`答案已核對，但歷史與自動書籤尚未儲存。${errorMessage(error)}`, true); }
-    }
-    nextQuestion();
+    updateCounts();
   } catch (error) { if (activeRequest === controller) showNotice(errorMessage(error), true); }
   finally {
     clearTimeout(timer);
@@ -273,7 +337,7 @@ $('#answer-form').addEventListener('submit', async (event) => {
       activeRequest = null;
       checking = false;
       renderQuiz();
-      $('#yourAnswer').focus();
+      if (lastResult) $('#next-question').focus(); else $('#yourAnswer').focus();
     }
   }
 });
@@ -285,7 +349,7 @@ for (const kind of ['bookmark', 'custom']) {
   for (const [direction, change] of [['prev', -1], ['next', 1]]) $(`#${kind}-${direction}`).addEventListener('click', () => { tablePages[kind] += change; renderTable(kind); });
 }
 window.addEventListener('resize', renderRoute);
-for (const [direction, change] of [['prev', -1], ['next', 1]]) $('#history-' + direction).addEventListener('click', () => { tablePages.history += change; renderHistory(); });
+for (const kind of ['history', 'round']) for (const [direction, change] of [['prev', -1], ['next', 1]]) $('#' + kind + '-' + direction).addEventListener('click', () => { tablePages[kind] += change; renderHistory(kind); });
 function selectSettingsTab(name) {
   for (const panel of ['practice', 'source']) {
     const selected = panel === name;
@@ -363,7 +427,10 @@ $('#import-file').addEventListener('change', async (event) => {
     if (file.size > 2 * 1024 * 1024) throw new Error('備份檔不可超過 2 MB。');
     const input = JSON.parse(await file.text());
     $('#settings-dialog').close();
-    mutate(() => repository.importData(input), '已合併匯入備份，原有單字與書籤已保留。');
+    mutate(() => {
+      repository.importData(input);
+      if (repository.state.round && !$('#quiz-view').hidden) history.replaceState(null, '', `/quiz?category=${encodeURIComponent(repository.state.round.category)}`);
+    }, '已合併匯入備份，原有單字與書籤已保留。');
   } catch (error) { $('#settings-dialog').close(); showNotice(errorMessage(error), true); }
   finally { event.target.value = ''; }
 });
@@ -371,6 +438,7 @@ window.addEventListener('storage', (event) => {
   if (event.key !== STORAGE_KEY && event.key !== null) return;
   cancelCheck();
   repository = new LocalRepository(builtins, storage);
+  practice = repository.readOnly ? new LocalRepository(builtins, memoryStorage()) : repository;
   updateCounts();
   renderRoute();
 });

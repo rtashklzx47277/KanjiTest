@@ -24,7 +24,9 @@
     <p id="notice" class="notice" role="status" aria-live="polite" hidden></p>
     <p id="storage-error" class="notice error" role="alert" hidden></p>
     <section id="quiz-view" aria-label="日文單字測驗">
-      <div class="quiz-controls">
+      <form id="quiz-setup" class="setup-card">
+      <h1>開始一輪測驗</h1>
+      <p class="history-note">選擇難度與題數，優先練習較容易答錯的單字。</p>
       <fieldset id="category"><legend>題目分類</legend>
         <label><input type="radio" name="category" value="all" checked>全部</label>
         <label><input type="radio" name="category" value="N5">N5</label>
@@ -35,8 +37,12 @@
         <label><input type="radio" name="category" value="bookmark">我的書籤</label>
         <label><input type="radio" name="category" value="custom">自訂單字</label>
       </fieldset>
-      <span id="pool-count" class="badge"></span>
-      </div>
+      <div class="setup-count"><label for="round-count">題數（1–100）</label><input id="round-count" type="number" min="1" max="100" step="1" value="10" required><span id="pool-count" class="badge"></span></div>
+      <p id="pool-note" class="history-note"></p>
+      <button id="start-quiz" type="submit">開始測驗</button>
+      </form>
+      <div id="round-play" class="round-play" hidden>
+      <div class="section-heading round-heading"><span id="round-progress" class="badge" aria-live="polite"></span><button id="change-setup" class="secondary" type="button">重新選擇</button></div>
       <div class="quiz-content"><div class="quiz-card"><div class="question-panel">
         <p id="question-category" class="eyebrow"></p>
         <h2 id="question" lang="ja"></h2>
@@ -48,8 +54,16 @@
       </div>
       <div id="last-result" class="result-card" aria-live="polite" hidden>
         <div class="section-heading result-heading"><h2 id="solution"></h2><div class="actions"><button id="add-bookmark-button" type="button">加入書籤</button></div></div>
-        <dl><div><dt>上一題</dt><dd id="lastQuestion" lang="ja"></dd></div><div><dt>你的答案</dt><dd id="yourLastAnswer" lang="ja"></dd></div><div><dt>中文解釋</dt><dd id="lastExplanation"></dd></div><div><dt>正確讀音</dt><dd id="lastAnswer" lang="ja"></dd></div></dl>
-      </div></div></div>
+        <dl><div><dt>本題單字</dt><dd id="lastQuestion" lang="ja"></dd></div><div><dt>你的答案</dt><dd id="yourLastAnswer" lang="ja"></dd></div><div><dt>中文解釋</dt><dd id="lastExplanation"></dd></div><div><dt>正確讀音</dt><dd id="lastAnswer" lang="ja"></dd></div></dl>
+        <div class="next-action"><button id="next-question" type="button">下一題</button></div>
+      </div></div></div></div>
+      <div id="round-summary" class="round-summary" hidden>
+        <div class="section-heading"><h1>本輪結果</h1><span id="round-score" class="badge" aria-live="polite"></span></div>
+        <p id="round-totals" class="history-note"></p>
+        <div class="round-actions"><button id="retry-wrong" type="button">重練本輪錯題</button><button id="another-round" type="button">再來一輪</button><button id="reselect-round" class="secondary" type="button">重新選擇難度、題數</button></div>
+        <div class="table-scroll"><table id="round-table"><caption class="sr-only">本輪答題紀錄</caption><thead><tr><th>題號</th><th>單字</th><th>結果</th><th>你的答案</th><th>正確讀音</th><th>操作</th></tr></thead><tbody></tbody></table></div>
+        <div id="round-pagination" class="pagination"><button id="round-prev" class="secondary" type="button">上一頁</button><span id="round-page" aria-live="polite"></span><button id="round-next" class="secondary" type="button">下一頁</button></div>
+      </div>
     </section>
     <section id="bookmarks-view" aria-labelledby="bookmarks-heading" hidden>
       <div class="section-heading"><div><p class="eyebrow">保留想複習的單字</p><h1 id="bookmarks-heading">我的書籤</h1></div><a class="button secondary" href="/quiz?category=bookmark">練習書籤</a></div>
@@ -79,7 +93,7 @@
     <div id="settings-practice" role="tabpanel" aria-labelledby="settings-practice-tab">
     <h3>練習設定</h3>
     <label class="toggle-label"><input id="auto-bookmark-wrong" type="checkbox">答錯時自動加入書籤</label>
-    <p>設定與最近 50 題答題歷史保存在此瀏覽器。</p>
+    <p>設定、測驗進度、單字統計與最近 50 題答題歷史保存在此瀏覽器。</p>
     <h3>資料備份</h3>
     <p>單字、書籤、設定與答題歷史保存在此瀏覽器，不需登入；更換裝置或清除網站資料前，可先匯出備份。</p>
     <div class="actions"><button id="export-data" type="button" class="secondary">匯出備份</button><button id="import-data" type="button" class="secondary">匯入備份</button><input id="import-file" type="file" accept="application/json,.json" hidden></div>

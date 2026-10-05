@@ -258,3 +258,50 @@ dialog p { margin: 8px 0; font-size: 14px; }
   nav a { padding: 6px 4px; font-size: 12px; }
   nav a span { margin-left: 2px; font-size: 11px; }
 }
+
+/* A round has three screens: setup, answer with feedback, and paginated results. */
+.setup-card { width: min(680px, 100%); margin: auto; padding: 28px; border: 1px solid #465063; border-radius: 12px; background: #2b2f36; }
+.setup-card h1 { margin-bottom: 8px; }
+.setup-card fieldset { margin: 20px 0; }
+.setup-count { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+#round-count { width: 95px; }
+#pool-note { margin: 12px 0; }
+#start-quiz { width: 100%; margin-top: 8px; }
+.round-play, .round-summary { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.round-heading { margin-bottom: 8px; }
+.next-action { text-align: center; margin-top: 12px; }
+.round-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 0; flex: none; }
+.round-actions button { font-size: 14px; padding: 6px 12px; }
+#round-table th:first-child { width: 58px; }
+#round-table th:nth-child(3) { width: 65px; }
+#round-table th:last-child, #round-table td:last-child { width: 116px; }
+@media (max-width: 650px) {
+  .setup-card { padding: 18px 16px; }
+  .setup-card fieldset { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 16px 0; }
+  .setup-card fieldset label { justify-content: center; white-space: nowrap; padding: 6px; font-size: 13px; }
+  .setup-card fieldset label:nth-last-child(-n+2) { grid-column: span 2; }
+  .setup-count { gap: 8px; font-size: 14px; }
+  #round-count { width: 72px; padding: 8px; }
+  .setup-count .badge { margin-left: auto; font-size: 12px; }
+  .round-actions { display: grid; grid-template-columns: 1fr 1fr; }
+  .round-actions button:last-child { grid-column: 1 / 3; }
+  #round-table tbody tr { height: 144px; grid-template-columns: 1fr 1fr 90px; grid-template-rows: 24px 42px 64px; }
+  #round-table td:first-child { display: flex; gap: 4px; grid-column: 1 / 3; grid-row: 1; font-size: 11px; color: #9cb2d2; }
+  #round-table td:first-child::before { content: '第 '; }
+  #round-table td:nth-child(2) { grid-column: 1 / 3; grid-row: 2; }
+  #round-table td:nth-child(3) { grid-column: 3; grid-row: 1; text-align: right; }
+  #round-table td:nth-child(4) { grid-column: 1; grid-row: 3; }
+  #round-table td:nth-child(5) { grid-column: 2; grid-row: 3; }
+  #round-table td:nth-child(4)::before { content: '你的答案'; display: block; font-size: 10px; color: #9cb2d2; }
+  #round-table td:nth-child(5)::before { content: '正確讀音'; display: block; font-size: 10px; color: #9cb2d2; }
+  #round-table td:last-child { width: auto; grid-column: 3; grid-row: 2 / 4; }
+}
+@media (max-height: 650px) {
+  .setup-card { padding: 14px 18px; }
+  .setup-card fieldset { margin: 10px 0; }
+  .setup-card h1 { font-size: 22px; }
+  .next-action { margin-top: 6px; }
+  .next-action button { padding: 5px 12px; }
+  .round-actions { gap: 6px; margin-top: 6px; }
+  .round-actions button { font-size: 12px; padding: 5px 8px; }
+}
