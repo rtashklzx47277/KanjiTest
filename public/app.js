@@ -232,7 +232,6 @@ $('#close-settings').addEventListener('click', () => $('#settings-dialog').close
 $('#close-word').addEventListener('click', () => $('#word-dialog').close());
 $('#word-prev').addEventListener('click', () => { detailPage--; renderDetail(); });
 $('#word-next').addEventListener('click', () => { detailPage++; renderDetail(); });
-$('#result-details').addEventListener('click', () => { if (lastResult) openDetail(lastResult); });
 $('#create-custom-button').addEventListener('click', () => {
   $('#custom-form').reset();
   $('#custom-error').hidden = true;
