@@ -10,7 +10,7 @@ let lastResult = null;
 let category = 'all';
 let activeRequest = null;
 let checking = false;
-const tablePages = { bookmark: 0, custom: 0 };
+const tablePages = { bookmark: 0, custom: 0, history: 0 };
 let detailPages = [], detailPage = 0;
 
 function renderDetail() {
@@ -49,6 +49,8 @@ function updateCounts() {
   $('#custom-count').textContent = repository.state.customWords.length;
   $('#create-custom-button').disabled = repository.readOnly;
   $('#import-data').disabled = repository.readOnly;
+  $('#auto-bookmark-wrong').disabled = repository.readOnly;
+  $('#auto-bookmark-wrong').checked = repository.state.settings.autoBookmarkWrong;
   const error = $('#storage-error');
   error.hidden = !repository.readOnly;
   error.textContent = repository.readOnly ? '無法讀取本機儲存資料。原有內容未被覆寫；仍可練習內建題庫，請先檢查瀏覽器儲存權限或資料格式。' : '';
@@ -136,22 +138,74 @@ function renderTable(kind) {
   $(`#${kind}-prev`).disabled = tablePages[kind] === 0;
   $(`#${kind}-next`).disabled = tablePages[kind] === pageCount - 1;
 }
+function renderHistory() {
+  const history = repository.history;
+  $('#history-summary').textContent = `${history.length} 題 · 正確 ${history.filter(item => item.correct).length}`;
+  const available = document.querySelector('main').getBoundingClientRect().bottom - $('#history-table').parentElement.getBoundingClientRect().top - 110;
+  const pageSize = Math.max(1, Math.floor(available / (innerWidth <= 650 ? 144 : 72)));
+  const pageCount = Math.max(1, Math.ceil(history.length / pageSize));
+  tablePages.history = Math.min(tablePages.history, pageCount - 1);
+  const tbody = $('#history-table tbody');
+  tbody.replaceChildren();
+  for (const item of history.slice(tablePages.history * pageSize, (tablePages.history + 1) * pageSize)) {
+    const row = document.createElement('tr');
+    const date = new Date(item.answeredAt);
+    const time = new Intl.DateTimeFormat('zh-TW', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }).format(date);
+    const fields = [time, item.question, item.correct ? '正確' : '錯誤', item.submitted, item.answer];
+    for (const [index, text] of fields.entries()) {
+      const cell = document.createElement('td');
+      const content = document.createElement(index === 1 ? 'button' : 'span');
+      content.className = 'cell-content';
+      content.textContent = text;
+      content.title = index === 0 ? date.toLocaleString('zh-TW') : text;
+      if (index === 1) {
+        content.type = 'button';
+        content.classList.add('word-link');
+        content.setAttribute('aria-label', `歷史單字詳細：${item.question}`);
+        content.addEventListener('click', () => openDetail(item));
+      }
+      if (index === 2) cell.className = item.correct ? 'history-correct' : 'history-incorrect';
+      cell.append(content);
+      row.append(cell);
+    }
+    const cell = document.createElement('td');
+    const button = document.createElement('button');
+    const bookmarked = repository.hasBookmark(item.wordId);
+    const missing = !repository.getWord(item.wordId);
+    button.type = 'button';
+    button.className = 'history-bookmark secondary';
+    button.textContent = missing ? '單字已刪除' : bookmarked ? '已加入書籤' : '加入書籤';
+    button.disabled = missing || bookmarked || repository.readOnly;
+    button.setAttribute('aria-label', `歷史加入書籤：${item.question}`);
+    button.addEventListener('click', () => mutate(() => repository.addBookmark(item.wordId), '已加入書籤。'));
+    cell.append(button);
+    row.append(cell);
+    tbody.append(row);
+  }
+  $('#history-empty').hidden = !!history.length;
+  $('#history-table').hidden = !history.length;
+  $('#history-pagination').hidden = !history.length;
+  $('#history-page').textContent = `${tablePages.history + 1} / ${pageCount} · ${history.length} 題`;
+  $('#history-prev').disabled = tablePages.history === 0;
+  $('#history-next').disabled = tablePages.history === pageCount - 1;
+}
 function renderRoute() {
   const path = location.pathname.replace(/\/$/u, '') || '/quiz';
-  const view = path === '/bookmarks' ? 'bookmarks' : path === '/words' ? 'words' : 'quiz';
+  const view = path === '/bookmarks' ? 'bookmarks' : path === '/words' ? 'words' : path === '/history' ? 'history' : 'quiz';
   const nextCategory = new URLSearchParams(location.search).get('category') || 'all';
   if (view === 'quiz' && category !== nextCategory) {
     category = CATEGORIES.includes(nextCategory) ? nextCategory : 'all';
     current = null;
   }
-  for (const name of ['quiz', 'bookmarks', 'words']) $(`#${name}-view`).hidden = view !== name;
+  for (const name of ['quiz', 'bookmarks', 'words', 'history']) $(`#${name}-view`).hidden = view !== name;
   for (const link of document.querySelectorAll('nav a[data-view]')) {
     if (link.dataset.view === view) link.setAttribute('aria-current', 'page');
     else link.removeAttribute('aria-current');
   }
   if (view === 'quiz') renderQuiz();
+  else if (view === 'history') renderHistory();
   else renderTable(view === 'bookmarks' ? 'bookmark' : 'custom');
-  document.title = view === 'quiz' ? '日文單字測驗' : `${view === 'bookmarks' ? '我的書籤' : '自訂單字'}｜日文單字測驗`;
+  document.title = view === 'quiz' ? '日文單字測驗' : `${view === 'bookmarks' ? '我的書籤' : view === 'history' ? '答題歷史' : '自訂單字'}｜日文單字測驗`;
 }
 function cancelCheck() {
   activeRequest?.abort();
@@ -168,7 +222,7 @@ document.addEventListener('click', (event) => {
   const link = event.target.closest('a');
   if (!link || event.defaultPrevented || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
   const url = new URL(link.href);
-  if (url.origin !== location.origin || !['/quiz', '/bookmarks', '/words'].includes(url.pathname)) return;
+  if (url.origin !== location.origin || !['/quiz', '/bookmarks', '/words', '/history'].includes(url.pathname)) return;
   event.preventDefault();
   navigate(url.pathname + url.search);
 });
@@ -207,6 +261,10 @@ $('#answer-form').addEventListener('submit', async (event) => {
     }
     if (activeRequest !== controller) return;
     lastResult = result;
+    if (!repository.readOnly) {
+      try { repository.recordAttempt(word, answer); updateCounts(); }
+      catch (error) { showNotice(`答案已核對，但歷史與自動書籤尚未儲存。${errorMessage(error)}`, true); }
+    }
     nextQuestion();
   } catch (error) { if (activeRequest === controller) showNotice(errorMessage(error), true); }
   finally {
@@ -227,8 +285,46 @@ for (const kind of ['bookmark', 'custom']) {
   for (const [direction, change] of [['prev', -1], ['next', 1]]) $(`#${kind}-${direction}`).addEventListener('click', () => { tablePages[kind] += change; renderTable(kind); });
 }
 window.addEventListener('resize', renderRoute);
-$('#open-settings').addEventListener('click', () => $('#settings-dialog').showModal());
+for (const [direction, change] of [['prev', -1], ['next', 1]]) $('#history-' + direction).addEventListener('click', () => { tablePages.history += change; renderHistory(); });
+function selectSettingsTab(name) {
+  for (const panel of ['practice', 'source']) {
+    const selected = panel === name;
+    $('#settings-' + panel).hidden = !selected;
+    $('#settings-' + panel + '-tab').setAttribute('aria-selected', String(selected));
+    $('#settings-' + panel + '-tab').tabIndex = selected ? 0 : -1;
+  }
+}
+for (const name of ['practice', 'source']) {
+  const tab = $('#settings-' + name + '-tab');
+  tab.addEventListener('click', () => selectSettingsTab(name));
+  tab.addEventListener('keydown', (event) => {
+    if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+    event.preventDefault();
+    const next = event.key === 'Home' ? 'practice' : event.key === 'End' ? 'source' : name === 'practice' ? 'source' : 'practice';
+    selectSettingsTab(next);
+    $('#settings-' + next + '-tab').focus();
+  });
+}
+$('#open-settings').addEventListener('click', () => { selectSettingsTab('practice'); updateCounts(); $('#settings-dialog').showModal(); });
 $('#close-settings').addEventListener('click', () => $('#settings-dialog').close());
+const settingsDialog = $('#settings-dialog');
+let settingsPointerOutside = false;
+function outsideSettings(event) {
+  const rect = settingsDialog.getBoundingClientRect();
+  return event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom;
+}
+settingsDialog.addEventListener('pointerdown', (event) => { settingsPointerOutside = outsideSettings(event); });
+settingsDialog.addEventListener('pointercancel', () => { settingsPointerOutside = false; });
+settingsDialog.addEventListener('close', () => { settingsPointerOutside = false; });
+settingsDialog.addEventListener('click', (event) => {
+  if (settingsPointerOutside && outsideSettings(event)) settingsDialog.close();
+  settingsPointerOutside = false;
+});
+$('#auto-bookmark-wrong').addEventListener('change', (event) => {
+  const enabled = event.target.checked;
+  if (mutate(() => repository.setAutoBookmarkWrong(enabled), '')) return;
+  updateCounts();
+});
 $('#close-word').addEventListener('click', () => $('#word-dialog').close());
 $('#word-prev').addEventListener('click', () => { detailPage--; renderDetail(); });
 $('#word-next').addEventListener('click', () => { detailPage++; renderDetail(); });

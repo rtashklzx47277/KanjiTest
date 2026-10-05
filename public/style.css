@@ -224,3 +224,37 @@ dialog p { margin: 8px 0; font-size: 14px; }
   .quiz-controls fieldset label { padding-top: 4px; padding-bottom: 4px; }
   .quiz-controls .badge { padding-top: 3px; padding-bottom: 3px; }
 }
+
+.toggle-label { display: flex; gap: 10px; align-items: center; cursor: pointer; padding: 8px 0; }
+.toggle-label input { accent-color: #91b7ff; width: 18px; height: 18px; }
+.settings-tabs { display: flex; gap: 8px; margin: 12px 0; }
+.settings-tabs button[aria-selected="true"] { background: #364767; border-color: #719fef; }
+.history-note { font-size: 13px; color: #b6c2d3; margin: 0; }
+.history-correct { color: #94d7a5; }
+.history-incorrect { color: #ffa0a0; }
+#history-table th:first-child { width: 110px; }
+#history-table th:nth-child(3) { width: 65px; }
+#history-table th:last-child, #history-table td:last-child { width: 116px; }
+.history-bookmark { font-size: 12px; padding: 5px 8px; }
+@media (max-width: 760px) {
+  .navbar { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 6px; padding: 8px 12px; }
+  .brand { font-size: 18px; height: 30px; display: flex; align-items: center; }
+  .gear { position: absolute; right: 12px; top: 6px; width: 34px; height: 34px; }
+  nav { width: 100%; gap: 4px; justify-content: space-between; }
+  nav a { padding: 6px 8px; font-size: 13px; white-space: nowrap; }
+}
+@media (max-width: 650px) {
+  #history-table tbody tr { height: 144px; grid-template-columns: 1fr 1fr 90px; grid-template-rows: 24px 42px 64px; }
+  #history-table td:first-child { grid-column: 1 / 3; grid-row: 1; font-size: 11px; color: #9cb2d2; }
+  #history-table td:nth-child(2) { grid-column: 1 / 3; grid-row: 2; }
+  #history-table td:nth-child(3) { grid-column: 3; grid-row: 1; text-align: right; }
+  #history-table td:nth-child(4) { grid-column: 1; grid-row: 3; }
+  #history-table td:nth-child(5) { grid-column: 2; grid-row: 3; }
+  #history-table td:nth-child(4)::before { content: '你的答案'; display: block; font-size: 10px; color: #9cb2d2; }
+  #history-table td:nth-child(5)::before { content: '正確讀音'; display: block; font-size: 10px; color: #9cb2d2; }
+  #history-table td:last-child { width: auto; grid-column: 3; grid-row: 2 / 4; }
+}
+@media (max-width: 380px) {
+  nav a { padding: 6px 4px; font-size: 12px; }
+  nav a span { margin-left: 2px; font-size: 11px; }
+}

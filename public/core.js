@@ -34,7 +34,27 @@ export function validateCustomWord(input) {
   return word;
 }
 
-const emptyState = () => ({ version: 1, customWords: [], bookmarkIds: [] });
+const emptyState = () => ({ version: 1, customWords: [], bookmarkIds: [], settings: { autoBookmarkWrong: false }, history: [] });
+
+function validateHistory(history = []) {
+  if (!Array.isArray(history) || history.length > 50) throw new Error('答題歷史格式不正確，最多保存 50 題。');
+  const ids = new Set();
+  return history.map((item) => {
+    if (!item || typeof item.id !== 'string' || !/^attempt:[a-zA-Z0-9-]{1,80}$/u.test(item.id) || ids.has(item.id)
+      || typeof item.wordId !== 'string' || !/^(builtin:\d+|jmdict:\d+|custom:[a-zA-Z0-9-]{1,80})$/u.test(item.wordId)
+      || !['N1', 'N2', 'N3', 'N4', 'N5', 'custom'].includes(item.category)
+      || typeof item.correct !== 'boolean' || typeof item.answeredAt !== 'string' || !Number.isFinite(Date.parse(item.answeredAt))) {
+      throw new Error('答題歷史內容不正確。');
+    }
+    ids.add(item.id);
+    const clean = { id: item.id, wordId: item.wordId, category: item.category, correct: item.correct, answeredAt: new Date(item.answeredAt).toISOString() };
+    for (const [key, limit] of [['question', 200], ['answer', 200], ['submitted', 200], ['explanation', 1000]]) {
+      if (typeof item[key] !== 'string' || item[key].length > limit || (key !== 'explanation' && !item[key].trim())) throw new Error('答題歷史文字格式不正確。');
+      clean[key] = item[key];
+    }
+    return clean;
+  });
+}
 
 export function validateState(input, builtins) {
   if (!input || input.version !== 1 || !Array.isArray(input.customWords) || !Array.isArray(input.bookmarkIds)) {
@@ -51,7 +71,8 @@ export function validateState(input, builtins) {
   });
   const bookmarkIds = [...new Set(input.bookmarkIds)];
   if (bookmarkIds.some((id) => typeof id !== 'string' || !knownIds.has(id))) throw new Error('書籤包含不存在的單字。');
-  return { version: 1, customWords, bookmarkIds };
+  if (input.settings !== undefined && (!input.settings || typeof input.settings.autoBookmarkWrong !== 'boolean')) throw new Error('練習設定格式不正確。');
+  return { version: 1, customWords, bookmarkIds, settings: { autoBookmarkWrong: input.settings?.autoBookmarkWrong ?? false }, history: validateHistory(input.history) };
 }
 
 export class LocalRepository {
@@ -75,6 +96,7 @@ export class LocalRepository {
 
   get allWords() { return [...this.builtins, ...this.state.customWords]; }
   get customWords() { return [...this.state.customWords].reverse(); }
+  get history() { return [...this.state.history]; }
   get bookmarks() {
     const words = new Map(this.allWords.map((word) => [word.id, word]));
     return [...this.state.bookmarkIds].reverse().map((id) => words.get(id));
@@ -114,6 +136,18 @@ export class LocalRepository {
   deleteBookmark(id) {
     this.save({ ...this.state, bookmarkIds: this.state.bookmarkIds.filter((bookmarkId) => bookmarkId !== id) });
   }
+  setAutoBookmarkWrong(enabled) {
+    this.save({ ...this.state, settings: { autoBookmarkWrong: enabled } });
+  }
+  recordAttempt(word, submitted, { id = `attempt:${globalThis.crypto.randomUUID()}`, answeredAt = new Date().toISOString() } = {}) {
+    const result = checkAnswer(word, submitted);
+    const attempt = { id, answeredAt, category: word.category, ...result };
+    const bookmarkIds = this.state.settings.autoBookmarkWrong && !result.correct && !this.hasBookmark(word.id)
+      ? [...this.state.bookmarkIds, word.id] : this.state.bookmarkIds;
+    // Save the attempt and automatic bookmark together; failed storage changes neither.
+    this.save({ ...this.state, history: [attempt, ...this.state.history].slice(0, 50), bookmarkIds });
+    return attempt;
+  }
   exportData() { return this.readOnly && this.rawData !== null ? this.rawData : JSON.stringify(this.state, null, 2); }
   importData(input) {
     const incoming = validateState(input, this.builtins);
@@ -123,6 +157,14 @@ export class LocalRepository {
       if (existing && JSON.stringify(existing) !== JSON.stringify(word)) throw new Error('匯入檔與現有單字 ID 衝突，請先核對資料。');
       merged.set(word.id, word);
     }
-    this.save({ version: 1, customWords: [...merged.values()], bookmarkIds: [...new Set([...this.state.bookmarkIds, ...incoming.bookmarkIds])] });
+    const history = new Map(this.state.history.map((item) => [item.id, item]));
+    for (const item of incoming.history) {
+      const existing = history.get(item.id);
+      if (existing && JSON.stringify(existing) !== JSON.stringify(item)) throw new Error('匯入檔與現有答題歷史 ID 衝突。');
+      history.set(item.id, item);
+    }
+    this.save({ version: 1, customWords: [...merged.values()], bookmarkIds: [...new Set([...this.state.bookmarkIds, ...incoming.bookmarkIds])],
+      settings: input.settings === undefined ? this.state.settings : incoming.settings,
+      history: [...history.values()].sort((a, b) => Date.parse(b.answeredAt) - Date.parse(a.answeredAt)).slice(0, 50) });
   }
 }

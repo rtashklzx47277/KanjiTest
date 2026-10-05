@@ -19,7 +19,7 @@ const server = http.createServer(async (req, res) => {
     }
     if (!['GET', 'HEAD'].includes(req.method)) { res.writeHead(405, { allow: 'GET, HEAD' }); return res.end(); }
     let path = decodeURIComponent(url.pathname);
-    if (['/', '/quiz', '/bookmarks', '/words'].includes(path)) path = '/index.html';
+    if (['/', '/quiz', '/bookmarks', '/words', '/history'].includes(path)) path = '/index.html';
     const filename = resolve(dist, '.' + path);
     if (!filename.startsWith(dist + sep)) { res.writeHead(403); return res.end(); }
     const contents = await readFile(filename);

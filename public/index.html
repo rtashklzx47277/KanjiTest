@@ -16,6 +16,7 @@
       <a href="/quiz" data-view="quiz">單字測驗</a>
       <a href="/bookmarks" data-view="bookmarks">我的書籤 <span id="bookmark-count">0</span></a>
       <a href="/words" data-view="words">自訂單字 <span id="custom-count">0</span></a>
+      <a href="/history" data-view="history">答題歷史</a>
     </nav>
     <button id="open-settings" class="gear secondary" type="button" aria-label="設定" title="設定" aria-haspopup="dialog"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="m9 3-.6 2.1-1.8 1L4.5 6 3 8.6l1.6 1.6v2.1L3 14l1.5 2.6 2.1-.4 1.8 1L9 20h3l.6-2.8 1.8-1 2.1.4L18 14l-1.6-1.7v-2.1L18 8.6 16.5 6l-2.1.2-1.8-1L12 3Z" transform="translate(1.5 .5)"/><circle cx="12" cy="12" r="3"/></svg></button>
   </header>
@@ -47,7 +48,7 @@
       </div>
       <div id="last-result" class="result-card" aria-live="polite" hidden>
         <div class="section-heading result-heading"><h2 id="solution"></h2><div class="actions"><button id="add-bookmark-button" type="button">加入書籤</button></div></div>
-        <dl><div><dt>上一題</dt><dd id="lastQuestion" lang="ja"></dd></div><div><dt>中文解釋</dt><dd id="lastExplanation"></dd></div><div><dt>正確讀音</dt><dd id="lastAnswer" lang="ja"></dd></div><div><dt>你的答案</dt><dd id="yourLastAnswer" lang="ja"></dd></div></dl>
+        <dl><div><dt>上一題</dt><dd id="lastQuestion" lang="ja"></dd></div><div><dt>你的答案</dt><dd id="yourLastAnswer" lang="ja"></dd></div><div><dt>中文解釋</dt><dd id="lastExplanation"></dd></div><div><dt>正確讀音</dt><dd id="lastAnswer" lang="ja"></dd></div></dl>
       </div></div></div>
     </section>
     <section id="bookmarks-view" aria-labelledby="bookmarks-heading" hidden>
@@ -64,16 +65,31 @@
       <p id="custom-empty" class="empty" hidden></p>
       <div id="custom-pagination" class="pagination" hidden><button id="custom-prev" class="secondary" type="button">上一頁</button><span id="custom-page" aria-live="polite"></span><button id="custom-next" class="secondary" type="button">下一頁</button></div>
     </section>
+    <section id="history-view" aria-labelledby="history-heading" hidden>
+      <div class="section-heading"><h1 id="history-heading">答題歷史</h1><span id="history-summary" class="badge"></span></div>
+      <p class="history-note">保留最近 50 題，最新紀錄在最上方。</p>
+      <div class="table-scroll"><table id="history-table"><caption class="sr-only">最近答題紀錄</caption><thead><tr><th>時間</th><th>單字</th><th>結果</th><th>你的答案</th><th>正確讀音</th><th>操作</th></tr></thead><tbody></tbody></table></div>
+      <p id="history-empty" class="empty" hidden>還沒有答題紀錄。完成測驗後，最近的答題狀況會顯示在這裡。</p>
+      <div id="history-pagination" class="pagination" hidden><button id="history-prev" class="secondary" type="button">上一頁</button><span id="history-page" aria-live="polite"></span><button id="history-next" class="secondary" type="button">下一頁</button></div>
+    </section>
   </main>
   <dialog id="settings-dialog" aria-labelledby="settings-heading">
     <div class="section-heading"><h2 id="settings-heading">設定</h2><button id="close-settings" class="secondary" type="button">關閉</button></div>
+    <div class="settings-tabs" role="tablist" aria-label="設定分類"><button id="settings-practice-tab" class="secondary" type="button" role="tab" aria-controls="settings-practice" aria-selected="true">練習與備份</button><button id="settings-source-tab" class="secondary" type="button" role="tab" aria-controls="settings-source" aria-selected="false" tabindex="-1">單字來源</button></div>
+    <div id="settings-practice" role="tabpanel" aria-labelledby="settings-practice-tab">
+    <h3>練習設定</h3>
+    <label class="toggle-label"><input id="auto-bookmark-wrong" type="checkbox">答錯時自動加入書籤</label>
+    <p>設定與最近 50 題答題歷史保存在此瀏覽器。</p>
     <h3>資料備份</h3>
-    <p>自訂單字與書籤保存在此瀏覽器，不需登入；更換裝置或清除網站資料前，可先匯出備份。</p>
+    <p>單字、書籤、設定與答題歷史保存在此瀏覽器，不需登入；更換裝置或清除網站資料前，可先匯出備份。</p>
     <div class="actions"><button id="export-data" type="button" class="secondary">匯出備份</button><button id="import-data" type="button" class="secondary">匯入備份</button><input id="import-file" type="file" accept="application/json,.json" hidden></div>
+    </div>
+    <div id="settings-source" role="tabpanel" aria-labelledby="settings-source-tab" hidden>
     <h3>單字來源</h3>
     <p>內建共 7,989 筆，涵蓋 N1–N5。擴充資料來自 <a href="https://github.com/tomoshi-app/tomoshi-dict-data" target="_blank" rel="noopener">Tomoshi Open Data</a>：JMdict © EDRDG、繁體中文翻譯 © Y1Z；分級源自 Jonathan Waller／yomitan-jlpt-vocab。</p>
     <p class="source-note">N1–N5 為社群分級，僅供學習參考。新增中文解釋含 AI 輔助翻譯。資料經篩選、去重與格式轉換，以 <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">CC BY-SA 4.0</a> 分享。</p>
     <div class="actions source-links"><a href="/vocabulary-notice.txt" target="_blank">完整來源說明</a><a href="/jlpt-extended.json" download>下載擴充資料</a></div>
+    </div>
   </dialog>
   <dialog id="word-dialog" aria-labelledby="word-heading">
     <div class="section-heading"><h2 id="word-heading">單字詳細</h2><button id="close-word" class="secondary" type="button">關閉</button></div>
