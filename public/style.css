@@ -225,8 +225,6 @@ dialog p { margin: 8px 0; font-size: 14px; }
   .quiz-controls .badge { padding-top: 3px; padding-bottom: 3px; }
 }
 
-.toggle-label { display: flex; gap: 10px; align-items: center; cursor: pointer; padding: 8px 0; }
-.toggle-label input { accent-color: #91b7ff; width: 18px; height: 18px; }
 .settings-tabs { display: flex; gap: 8px; margin: 12px 0; }
 .settings-tabs button[aria-selected="true"] { background: #364767; border-color: #719fef; }
 .history-note { font-size: 13px; color: #b6c2d3; margin: 0; }
@@ -265,13 +263,17 @@ dialog p { margin: 8px 0; font-size: 14px; }
 .setup-card fieldset { margin: 20px 0; }
 .setup-count { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 #round-count { width: 95px; }
-#pool-note { margin: 12px 0; }
 #start-quiz { width: 100%; margin-top: 8px; }
 .round-play, .round-summary { display: flex; flex-direction: column; flex: 1; min-height: 0; }
 .round-heading { margin-bottom: 8px; }
-.next-action { text-align: center; margin-top: 12px; }
 .round-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 0; flex: none; }
 .round-actions button { font-size: 14px; padding: 6px 12px; }
+#answer-form .answer-row input { width: 100%; }
+.result-card .result-heading { display: block; text-align: center; }
+.result-card dl { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.result-card dl > div { display: flex; justify-content: center; align-items: baseline; gap: 12px; width: 100%; }
+.result-card dt { flex: none; }
+.result-card dd { margin: 0; text-align: center; min-width: 0; max-width: 75%; }
 #round-table th:first-child { width: 58px; }
 #round-table th:nth-child(3) { width: 65px; }
 #round-table th:last-child, #round-table td:last-child { width: 116px; }
@@ -300,8 +302,6 @@ dialog p { margin: 8px 0; font-size: 14px; }
   .setup-card { padding: 14px 18px; }
   .setup-card fieldset { margin: 10px 0; }
   .setup-card h1 { font-size: 22px; }
-  .next-action { margin-top: 6px; }
-  .next-action button { padding: 5px 12px; }
   .round-actions { gap: 6px; margin-top: 6px; }
   .round-actions button { font-size: 12px; padding: 5px 8px; }
 }

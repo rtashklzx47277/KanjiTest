@@ -1,4 +1,4 @@
-import { STORAGE_KEY, CATEGORIES, LocalRepository, checkAnswer } from './core.js';
+import { STORAGE_KEY, CATEGORIES, LocalRepository, checkAnswer, isKanaOnly } from './core.js';
 
 const $ = (selector) => document.querySelector(selector);
 const builtins = JSON.parse($('#builtin-words').textContent);
@@ -13,6 +13,7 @@ let lastResult = null;
 let category = 'all';
 let activeRequest = null;
 let checking = false;
+let composing = false, compositionEndAt = -Infinity;
 const tablePages = { bookmark: 0, custom: 0, history: 0, round: 0 };
 let detailPages = [], detailPage = 0;
 
@@ -52,8 +53,6 @@ function updateCounts() {
   $('#custom-count').textContent = repository.state.customWords.length;
   $('#create-custom-button').disabled = repository.readOnly;
   $('#import-data').disabled = repository.readOnly;
-  $('#auto-bookmark-wrong').disabled = repository.readOnly;
-  $('#auto-bookmark-wrong').checked = repository.state.settings.autoBookmarkWrong;
   const error = $('#storage-error');
   error.hidden = !repository.readOnly;
   error.textContent = repository.readOnly ? '無法讀取本機儲存資料。原有內容未被覆寫；仍可練習內建題庫，請先檢查瀏覽器儲存權限或資料格式。' : '';
@@ -62,38 +61,36 @@ function pool() { return repository.wordsIn(category); }
 function renderQuiz() {
   const words = pool();
   const round = practice.state.round;
-  const completed = round && round.position === round.words.length;
+  const completed = round && (round.finished || round.position === round.words.length);
   $('#quiz-setup').hidden = !!round;
   $('#round-play').hidden = !round || completed;
   $('#round-summary').hidden = !completed;
   $('#pool-count').textContent = `${words.length} 個單字`;
   for (const radio of document.querySelectorAll('input[name="category"]')) radio.checked = radio.value === category;
-  const count = Number($('#round-count').value);
-  $('#pool-note').textContent = !words.length ? '這個分類還沒有單字，可先加入書籤或新增自訂單字。'
-    : count > words.length ? `題庫只有 ${words.length} 個單字，本輪將出 ${words.length} 題，單字不重複。` : '同一輪單字不重複。';
   $('#start-quiz').disabled = !words.length;
   if (!round) { current = null; lastResult = null; return; }
   if (completed) {
+    current = null;
+    lastResult = null;
     const correct = round.results.filter(item => item.correct).length;
-    $('#round-score').textContent = `正確率 ${(correct / round.results.length * 100).toFixed(1)}%`;
-    $('#round-totals').textContent = `${round.review ? '錯題複習 · ' : ''}${round.category === 'all' ? '全部' : round.category === 'bookmark' ? '我的書籤' : round.category === 'custom' ? '自訂單字' : round.category} · ${round.results.length} 題 · 正確 ${correct} · 錯誤 ${round.results.length - correct}`;
-    $('#retry-wrong').disabled = correct === round.results.length;
+    $('#round-score').textContent = round.results.length ? `正確率 ${(correct / round.results.length * 100).toFixed(1)}%` : '正確率 —';
+    $('#round-totals').textContent = `${round.finished && round.position < round.words.length ? '提前結束 · ' : ''}${round.review ? '錯題複習 · ' : ''}${round.category === 'all' ? '全部' : round.category === 'bookmark' ? '我的書籤' : round.category === 'custom' ? '自訂單字' : round.category} · 已答 ${round.results.length} / ${round.words.length} 題 · 正確 ${correct} · 錯誤 ${round.results.length - correct}`;
+    $('#retry-wrong').disabled = !round.results.some((item, index) => !item.correct && !isKanaOnly(round.words[index].question));
+    $('#round-empty').hidden = round.results.length > 0;
     renderHistory('round');
     return;
   }
   const next = round.words[round.position];
   if (current?.id !== next.id) $('#yourAnswer').value = '';
   current = next;
-  lastResult = round.results[round.position] ?? null;
-  if (lastResult) $('#yourAnswer').value = lastResult.submitted;
+  lastResult = round.results.at(-1) ?? null;
   $('#round-progress').textContent = `${round.review ? '錯題複習 · ' : ''}第 ${round.position + 1} / ${round.words.length} 題`;
   $('#question').textContent = current?.question || '尚無單字';
   $('#question').title = current?.question || '';
   $('#question-category').textContent = current?.category === 'custom' ? '自訂單字' : current?.category || '';
   $('#empty-quiz').hidden = !!current;
   $('#answer-form').hidden = !current;
-  $('#answer-submit').disabled = checking || !!lastResult;
-  $('#yourAnswer').disabled = checking || !!lastResult;
+  $('#yourAnswer').disabled = checking;
   $('#last-result').hidden = !lastResult;
   if (lastResult) {
     $('#solution').textContent = lastResult.correct ? '正解！' : '再記住一次';
@@ -102,11 +99,6 @@ function renderQuiz() {
     $('#lastAnswer').textContent = lastResult.answer;
     $('#yourLastAnswer').textContent = lastResult.submitted;
     $('#lastExplanation').textContent = lastResult.explanation || '—';
-    const bookmarked = repository.hasBookmark(lastResult.wordId);
-    const missing = !repository.getWord(lastResult.wordId);
-    $('#add-bookmark-button').textContent = bookmarked ? '已加入書籤' : '加入書籤';
-    $('#add-bookmark-button').disabled = bookmarked || missing || repository.readOnly;
-    $('#next-question').textContent = round.position === round.words.length - 1 ? '查看本輪結果' : '下一題';
   }
 }
 
@@ -279,11 +271,18 @@ window.addEventListener('popstate', () => { cancelCheck(); renderRoute(); });
 $('#category').addEventListener('change', (event) => {
   if (event.target.name === 'category') navigate(`/quiz?category=${encodeURIComponent(event.target.value)}`);
 });
-$('#round-count').addEventListener('input', renderQuiz);
+function normalizeCount() {
+  const field = $('#round-count');
+  const count = Number(field.value);
+  field.value = Number.isFinite(count) ? Math.max(1, Math.min(100, Math.floor(count))) : 10;
+}
+$('#round-count').addEventListener('input', event => { if (Number(event.target.value) > 100) event.target.value = 100; });
+$('#round-count').addEventListener('blur', normalizeCount);
 $('#quiz-setup').addEventListener('submit', event => { event.preventDefault(); startRound(); });
-for (const id of ['change-setup', 'reselect-round']) $('#' + id).addEventListener('click', returnToSetup);
-$('#next-question').addEventListener('click', () => {
-  try { practice.advanceRound(); $('#yourAnswer').value = ''; renderQuiz(); if (!$('#round-play').hidden) $('#yourAnswer').focus(); }
+$('#reselect-round').addEventListener('click', returnToSetup);
+$('#change-setup').addEventListener('click', () => {
+  cancelCheck();
+  try { practice.endRound(); showNotice(''); renderQuiz(); }
   catch (error) { showNotice(errorMessage(error), true); }
 });
 $('#retry-wrong').addEventListener('click', () => {
@@ -296,9 +295,16 @@ $('#another-round').addEventListener('click', () => {
   const round = practice.state.round;
   startRound({ count: round.requestedCount, selectedCategory: round.category });
 });
+$('#yourAnswer').addEventListener('compositionstart', () => { composing = true; });
+$('#yourAnswer').addEventListener('compositionend', () => { composing = false; compositionEndAt = performance.now(); });
+$('#yourAnswer').addEventListener('keydown', event => {
+  if (event.key !== 'Enter' || event.isComposing || composing || event.keyCode === 229) return;
+  event.preventDefault();
+  if (!event.repeat && !checking && performance.now() - compositionEndAt >= 80) $('#answer-form').requestSubmit();
+});
 $('#answer-form').addEventListener('submit', async (event) => {
   event.preventDefault();
-  if (!current || checking || lastResult) return;
+  if (!current || checking || composing || performance.now() - compositionEndAt < 80) return;
   const answer = $('#yourAnswer').value.trim();
   if (!answer) return;
   const word = current;
@@ -337,12 +343,9 @@ $('#answer-form').addEventListener('submit', async (event) => {
       activeRequest = null;
       checking = false;
       renderQuiz();
-      if (lastResult) $('#next-question').focus(); else $('#yourAnswer').focus();
+      if (!$('#round-play').hidden) $('#yourAnswer').focus();
     }
   }
-});
-$('#add-bookmark-button').addEventListener('click', () => {
-  if (lastResult) mutate(() => repository.addBookmark(lastResult.wordId), '已加入書籤。');
 });
 for (const kind of ['bookmark', 'custom']) {
   $(`#${kind}-filter`).addEventListener('input', () => { tablePages[kind] = 0; renderTable(kind); });
@@ -385,11 +388,6 @@ for (const dialog of document.querySelectorAll('dialog')) {
     pointerOutside = false;
   });
 }
-$('#auto-bookmark-wrong').addEventListener('change', (event) => {
-  const enabled = event.target.checked;
-  if (mutate(() => repository.setAutoBookmarkWrong(enabled), '')) return;
-  updateCounts();
-});
 $('#close-word').addEventListener('click', () => $('#word-dialog').close());
 $('#word-prev').addEventListener('click', () => { detailPage--; renderDetail(); });
 $('#word-next').addEventListener('click', () => { detailPage++; renderDetail(); });

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import words from '../data/words.js';
-import { STORAGE_KEY, LocalRepository, checkAnswer, selectQuestion } from '../public/core.js';
+import { STORAGE_KEY, LocalRepository, checkAnswer, selectQuestion, isKanaOnly } from '../public/core.js';
 
 function memoryStorage(raw = null) {
   return { raw, getItem() { return this.raw; }, setItem(key, value) { assert.equal(key, STORAGE_KEY); this.raw = value; } };
@@ -37,7 +37,7 @@ test('custom word and bookmark survive a fresh repository instance', () => {
   assert.equal(reloaded.customWords[0].question, fields.question);
   assert.equal(reloaded.bookmarks.length, 2);
   assert.equal(reloaded.wordsIn('custom').length, 1);
-  assert.equal(reloaded.wordsIn('all').length, 947);
+  assert.equal(reloaded.wordsIn('all').length, words.filter(word => !isKanaOnly(word.question)).length + 1);
 });
 test('bookmark additions deduplicate and deleting a custom word removes its bookmark', () => {
   const repo = new LocalRepository(words, memoryStorage());

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { handleApi } from '../lib/api.js';
-import words from '../data/catalog.js';
+import words, { quizWords } from '../data/catalog.js';
 
 const request = (path, init) => new Request(`https://example.test${path}`, init);
 const post = (payload) => ({ method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(payload) });
@@ -11,7 +11,7 @@ test('GET vocabulary collection returns filtered and paginated representations',
   assert.equal(response.status, 200);
   assert.equal(response.headers.get('cache-control'), 'public, max-age=300');
   const payload = await response.json();
-  assert.equal(payload.total, words.filter((word) => word.category === 'N4').length);
+  assert.equal(payload.total, quizWords.filter((word) => word.category === 'N4').length);
   assert.equal(payload.data.length, 2);
   assert.ok(payload.data.every((word) => word.category === 'N4'));
 });

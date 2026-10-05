@@ -14,3 +14,5 @@ Reproduction with Python 3.14 (no third-party packages):
 3. Run `python tools/import-tomoshi.py path/to/tomoshi-dict-open.db`.
 
 No example sentences, Wiktionary definitions, stroke-order data, logos, or proprietary application data are imported.
+
+The playable catalog excludes kana-only headwords (including punctuation, long vowels and half-width kana). The full source arrays and downloadable extended data remain available for attribution, reproduction and compatibility with previously saved IDs; excluded headwords are not sampled in quizzes or listed in collection queries.

@@ -7,10 +7,10 @@ function storage(raw = null) { return { raw, getItem() { return this.raw; }, set
 function attempt(repo, number, answer = 'wrong') {
   return repo.recordAttempt(words[0], answer, { id: `attempt:test-${number}`, answeredAt: new Date(1760000000000 + number * 1000).toISOString() });
 }
-test('old stored data defaults to disabled auto-bookmark and empty history without losing bookmarks', () => {
+test('old stored data loads empty history without losing bookmarks', () => {
   const repo = new LocalRepository(words, storage(JSON.stringify({ version: 1, customWords: [], bookmarkIds: [words[0].id] })));
   assert.equal(repo.readOnly, false);
-  assert.equal(repo.state.settings.autoBookmarkWrong, false);
+  assert.equal('settings' in repo.state, false);
   assert.deepEqual(repo.history, []);
   assert.equal(repo.hasBookmark(words[0].id), true);
 });
@@ -25,46 +25,42 @@ test('history retains only the newest 50 attempts and survives a fresh repositor
   assert.equal(reloaded.history[0].answer, words[0].answer);
   assert.equal(reloaded.history[0].correct, false);
 });
-test('automatic bookmarks require the option and a wrong answer; repeated wrong answers deduplicate', () => {
-  const saved = storage(), repo = new LocalRepository(words, saved);
+test('removed automatic bookmark option is ignored even when enabled in an old backup', () => {
+  const saved = storage(JSON.stringify({ version: 1, customWords: [], bookmarkIds: [words[1].id], settings: { autoBookmarkWrong: true } }));
+  const repo = new LocalRepository(words, saved);
   attempt(repo, 1);
-  assert.equal(repo.bookmarks.length, 0);
-  repo.setAutoBookmarkWrong(true);
   attempt(repo, 2, 'カゾク');
-  assert.equal(repo.bookmarks.length, 0);
   attempt(repo, 3);
   attempt(repo, 4);
   assert.equal(repo.bookmarks.length, 1);
-  assert.equal(new LocalRepository(words, saved).state.settings.autoBookmarkWrong, true);
-  repo.setAutoBookmarkWrong(false);
-  repo.recordAttempt(words[1], 'wrong');
-  assert.equal(repo.hasBookmark(words[1].id), false);
-  assert.throws(() => repo.setAutoBookmarkWrong('true'));
+  assert.equal(repo.hasBookmark(words[0].id), false);
+  assert.equal(repo.hasBookmark(words[1].id), true);
+  assert.equal('settings' in JSON.parse(repo.exportData()), false);
+  assert.equal(new LocalRepository(words, saved).bookmarks.length, 1);
 });
-test('failed persistence changes neither history nor automatic bookmarks or preferences', () => {
+test('failed persistence changes neither history nor statistics or existing bookmarks', () => {
   const saved = storage(), repo = new LocalRepository(words, saved);
-  repo.setAutoBookmarkWrong(true);
+  repo.addBookmark(words[1].id);
   saved.setItem = () => { throw new DOMException('Full', 'QuotaExceededError'); };
   assert.throws(() => attempt(repo, 1), /Full/u);
   assert.equal(repo.history.length, 0);
-  assert.equal(repo.bookmarks.length, 0);
-  assert.throws(() => repo.setAutoBookmarkWrong(false), /Full/u);
-  assert.equal(repo.state.settings.autoBookmarkWrong, true);
+  assert.equal(repo.bookmarks.length, 1);
+  assert.deepEqual(repo.state.wordStats, {});
 });
-test('backup restores settings and merges history once; legacy backup preserves current preference', () => {
+test('backup merges history once and old settings cannot restore removed auto-bookmarks', () => {
   const source = new LocalRepository(words, storage());
-  source.setAutoBookmarkWrong(true);
   attempt(source, 2);
   const target = new LocalRepository(words, storage());
   attempt(target, 1);
   const backup = JSON.parse(source.exportData());
+  backup.settings = { autoBookmarkWrong: true };
   target.importData(backup);
   target.importData(backup);
   assert.equal(target.history.length, 2);
   assert.equal(target.history[0].id, 'attempt:test-2');
-  assert.equal(target.state.settings.autoBookmarkWrong, true);
+  assert.equal('settings' in target.state, false);
   target.importData({ version: 1, customWords: [], bookmarkIds: [] });
-  assert.equal(target.state.settings.autoBookmarkWrong, true);
+  assert.equal('settings' in target.state, false);
   assert.equal(target.history.length, 2);
   backup.history[0].submitted = 'conflict';
   assert.throws(() => target.importData(backup), /衝突/u);
@@ -72,7 +68,7 @@ test('backup restores settings and merges history once; legacy backup preserves 
 test('deleted custom word keeps its historical snapshot while its bookmark is removed', () => {
   const repo = new LocalRepository(words, storage());
   const word = repo.addCustom({ question: '図書館', answer: 'としょかん', explanation: '圖書館' }, 'custom:history');
-  repo.setAutoBookmarkWrong(true);
+  repo.addBookmark(word.id);
   repo.recordAttempt(word, 'wrong');
   repo.deleteCustom(word.id);
   assert.equal(repo.history[0].question, '図書館');

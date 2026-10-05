@@ -35,18 +35,16 @@ test('100-question round retains all results while global history keeps 50 and p
   for (let i = 0; i < 100; i++) {
     const word = repository.state.round.words[i];
     repository.recordAttempt(word, i % 2 ? 'wrong' : word.answer.split(/[/／、,;；]/u)[0]);
-    assert.throws(() => repository.recordAttempt(word, 'wrong'), /已完成/u);
+    assert.throws(() => repository.recordAttempt(word, 'wrong'), /已完成|已結束/u);
     repository = new LocalRepository(words, saved);
     assert.equal(repository.state.round.results.length, i + 1);
-    assert.equal(repository.state.round.position, i);
-    repository.advanceRound();
+    assert.equal(repository.state.round.position, i + 1);
   }
   assert.equal(repository.state.round.position, 100);
   assert.equal(repository.state.round.results.length, 100);
   assert.equal(repository.state.round.results.filter(item => item.correct).length, 50);
   assert.equal(repository.history.length, 50);
   assert.equal(Object.values(repository.state.wordStats).reduce((n, item) => n + item.correct + item.wrong, 0), 100);
-  assert.throws(() => repository.advanceRound());
 });
 
 test('retry uses only incorrect words and keeps original selected count for another normal round', () => {
@@ -54,7 +52,6 @@ test('retry uses only incorrect words and keeps original selected count for anot
   repository.startRound('N4', 10, { random: () => 0 });
   for (const [index, word] of repository.state.round.words.entries()) {
     repository.recordAttempt(word, index < 3 ? 'wrong' : word.answer.split(/[/／、,;；]/u)[0]);
-    repository.advanceRound();
   }
   const previous = repository.state.round;
   const wrong = previous.words.filter(word => previous.results.some(item => item.wordId === word.id && !item.correct));
@@ -80,9 +77,8 @@ test('per-word totals survive history rollover and migrate only available old hi
   assert.deepEqual(restored.state.wordStats[words[0].id], { correct: 50, wrong: 15 });
 });
 
-test('failed storage cannot partially count an answer, add a bookmark, or advance a round', () => {
+test('failed storage cannot partially count an answer or advance a round', () => {
   const saved = storage(), repository = new LocalRepository(words, saved);
-  repository.setAutoBookmarkWrong(true);
   repository.startRound('N5', 1);
   const before = repository.exportData();
   saved.setItem = () => { throw new DOMException('full', 'QuotaExceededError'); };
@@ -90,14 +86,12 @@ test('failed storage cannot partially count an answer, add a bookmark, or advanc
   assert.equal(repository.exportData(), before);
 });
 
-test('deleted custom words keep round snapshots and cannot create dangling auto-bookmarks', () => {
+test('deleted custom words keep round snapshots without dangling bookmarks', () => {
   const repository = repo();
   const word = repository.addCustom({ question: '図書館', answer: 'としょかん', explanation: '圖書館' });
   repository.startRound('custom', 100);
   repository.deleteCustom(word.id);
-  repository.setAutoBookmarkWrong(true);
   repository.recordAttempt(repository.state.round.words[0], 'wrong');
-  repository.advanceRound();
   assert.equal(repository.bookmarks.length, 0);
   assert.equal(repository.state.round.results[0].question, '図書館');
 });

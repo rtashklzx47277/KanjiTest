@@ -1,6 +1,12 @@
 export const STORAGE_KEY = 'kanjitest:data:v1';
 export const CATEGORIES = ['all', 'N5', 'N4', 'N3', 'N2', 'N1', 'bookmark', 'custom'];
 
+export function isKanaOnly(value) {
+  const text = value.normalize('NFKC').replace(/[\p{White_Space}\p{Punctuation}]/gu, '');
+  return /[\p{Script=Hiragana}\p{Script=Katakana}]/u.test(text)
+    && /^[\p{Script=Hiragana}\p{Script=Katakana}\p{Mark}ー]+$/u.test(text);
+}
+
 export function normalizeAnswer(value) {
   return value.normalize('NFKC').trim().replace(/\s+/gu, '')
     .replace(/[\u30a1-\u30f6]/gu, (kana) => String.fromCharCode(kana.charCodeAt(0) - 0x60));
@@ -31,7 +37,7 @@ export function questionWeight(stats = { correct: 0, wrong: 0 }) {
 // Weighted sampling without replacement: each draw removes its selected word.
 export function selectRound(words, count, wordStats = {}, random = Math.random) {
   if (!Number.isInteger(count) || count < 1 || count > 100) throw new Error('題數須為 1 至 100 的整數。');
-  const candidates = [...new Map(words.map(word => [word.id, word])).values()]
+  const candidates = [...new Map(words.filter(word => !isKanaOnly(word.question)).map(word => [word.id, word])).values()]
     .map(word => ({ word, weight: questionWeight(wordStats[word.id]) }));
   const selected = [];
   while (candidates.length && selected.length < count) {
@@ -54,7 +60,7 @@ export function validateCustomWord(input) {
   return word;
 }
 
-const emptyState = () => ({ version: 1, customWords: [], bookmarkIds: [], settings: { autoBookmarkWrong: false }, history: [], wordStats: {}, round: null });
+const emptyState = () => ({ version: 1, customWords: [], bookmarkIds: [], history: [], wordStats: {}, round: null });
 
 function validateHistory(history = [], limit = 50) {
   if (!Array.isArray(history) || history.length > limit) throw new Error(`答題歷史格式不正確，最多保存 ${limit} 題。`);
@@ -98,11 +104,12 @@ function validateStats(input, history) {
 function validateRound(round) {
   if (round === undefined || round === null) return null;
   if (!round || !CATEGORIES.includes(round.category) || typeof round.review !== 'boolean'
+    || (round.finished !== undefined && typeof round.finished !== 'boolean')
     || !Number.isInteger(round.requestedCount) || round.requestedCount < 1 || round.requestedCount > 100
     || !Array.isArray(round.words) || !round.words.length || round.words.length > round.requestedCount
     || !Number.isInteger(round.position) || round.position < 0 || round.position > round.words.length) throw new Error('本輪測驗格式不正確。');
   const ids = new Set();
-  const words = round.words.map(word => {
+  let words = round.words.map(word => {
     if (!validWordId(word?.id) || ids.has(word.id) || !['N1', 'N2', 'N3', 'N4', 'N5', 'custom'].includes(word.category)) throw new Error('本輪單字格式不正確。');
     ids.add(word.id);
     // Built-in explanations may be blank or longer than custom input limits.
@@ -112,7 +119,11 @@ function validateRound(round) {
   const results = validateHistory(round.results, 100);
   if (results.length < round.position || results.length > Math.min(round.position + 1, words.length)
     || results.some((item, index) => item.wordId !== words[index].id || item.question !== words[index].question || item.answer !== words[index].answer || item.correct !== checkAnswer(words[index], item.submitted).correct)) throw new Error('本輪答題紀錄與進度不一致。');
-  return { category: round.category, requestedCount: round.requestedCount, review: round.review, words, position: round.position, results };
+  // Upgrade a previous manual-next round and remove only unanswered kana-only questions.
+  // Already answered snapshots stay available in the final record.
+  words = [...words.slice(0, results.length), ...words.slice(results.length).filter(word => !isKanaOnly(word.question))];
+  if (!words.length) return null;
+  return { category: round.category, requestedCount: round.requestedCount, review: round.review, words, position: results.length, results, finished: round.finished ?? false };
 }
 
 export function validateState(input, builtins) {
@@ -130,9 +141,9 @@ export function validateState(input, builtins) {
   });
   const bookmarkIds = [...new Set(input.bookmarkIds)];
   if (bookmarkIds.some((id) => typeof id !== 'string' || !knownIds.has(id))) throw new Error('書籤包含不存在的單字。');
-  if (input.settings !== undefined && (!input.settings || typeof input.settings.autoBookmarkWrong !== 'boolean')) throw new Error('練習設定格式不正確。');
   const history = validateHistory(input.history);
-  return { version: 1, customWords, bookmarkIds, settings: { autoBookmarkWrong: input.settings?.autoBookmarkWrong ?? false }, history,
+  // Ignore the removed autoBookmarkWrong preference in older saved data and backups.
+  return { version: 1, customWords, bookmarkIds, history,
     wordStats: validateStats(input.wordStats, history), round: validateRound(input.round) };
 }
 
@@ -166,10 +177,9 @@ export class LocalRepository {
   hasBookmark(id) { return this.state.bookmarkIds.includes(id); }
   wordsIn(category) {
     if (!CATEGORIES.includes(category)) throw new Error('不存在的題目分類。');
-    if (category === 'bookmark') return this.bookmarks;
-    if (category === 'custom') return this.customWords;
-    if (category === 'all') return this.allWords;
-    return this.builtins.filter((word) => word.category === category);
+    const words = category === 'bookmark' ? this.bookmarks : category === 'custom' ? this.customWords
+      : category === 'all' ? this.allWords : this.builtins.filter((word) => word.category === category);
+    return words.filter(word => !isKanaOnly(word.question));
   }
 
   save(nextState) {
@@ -197,35 +207,31 @@ export class LocalRepository {
   deleteBookmark(id) {
     this.save({ ...this.state, bookmarkIds: this.state.bookmarkIds.filter((bookmarkId) => bookmarkId !== id) });
   }
-  setAutoBookmarkWrong(enabled) {
-    this.save({ ...this.state, settings: { autoBookmarkWrong: enabled } });
-  }
   startRound(category, count, { words, review = false, random = Math.random } = {}) {
     if (!CATEGORIES.includes(category)) throw new Error('不存在的題目分類。');
     const selected = selectRound(words ?? this.wordsIn(category), count, this.state.wordStats, random);
     if (!selected.length) throw new Error('這個分類還沒有單字。');
-    this.save({ ...this.state, round: { category, requestedCount: count, review, words: selected, position: 0, results: [] } });
+    this.save({ ...this.state, round: { category, requestedCount: count, review, words: selected, position: 0, results: [], finished: false } });
   }
-  advanceRound() {
+  endRound() {
     const round = this.state.round;
-    if (!round || round.position >= round.words.length || round.results.length !== round.position + 1) throw new Error('請先完成這一題。');
-    this.save({ ...this.state, round: { ...round, position: round.position + 1 } });
+    if (!round) throw new Error('目前沒有進行中的測驗。');
+    this.save({ ...this.state, round: { ...round, finished: true } });
   }
   clearRound() { this.save({ ...this.state, round: null }); }
   recordAttempt(word, submitted, { id = `attempt:${globalThis.crypto.randomUUID()}`, answeredAt = new Date().toISOString() } = {}) {
     const result = checkAnswer(word, submitted);
     const attempt = { id, answeredAt, category: word.category, ...result };
-    const bookmarkIds = this.state.settings.autoBookmarkWrong && !result.correct && this.getWord(word.id) && !this.hasBookmark(word.id)
-      ? [...this.state.bookmarkIds, word.id] : this.state.bookmarkIds;
-    // Save the attempt and automatic bookmark together; failed storage changes neither.
+    // Save the attempt, counters and automatic advancement together; never add bookmarks.
     const stats = this.state.wordStats[word.id] ?? { correct: 0, wrong: 0 };
     const wordStats = { ...this.state.wordStats, [word.id]: { ...stats, [result.correct ? 'correct' : 'wrong']: stats[result.correct ? 'correct' : 'wrong'] + 1 } };
     let round = this.state.round;
-    if (round && round.position < round.words.length) {
+    if (round) {
+      if (round.finished || round.position >= round.words.length) throw new Error('這一輪測驗已結束。');
       if (round.words[round.position].id !== word.id || round.results.length !== round.position) throw new Error('這一題已完成或測驗進度已改變。');
-      round = { ...round, results: [...round.results, attempt] };
+      round = { ...round, position: round.position + 1, results: [...round.results, attempt] };
     }
-    this.save({ ...this.state, history: [attempt, ...this.state.history].slice(0, 50), bookmarkIds, wordStats, round });
+    this.save({ ...this.state, history: [attempt, ...this.state.history].slice(0, 50), wordStats, round });
     return attempt;
   }
   exportData() { return this.readOnly && this.rawData !== null ? this.rawData : JSON.stringify(this.state, null, 2); }
@@ -250,7 +256,6 @@ export class LocalRepository {
       wordStats[id] = { correct: Math.max(existing.correct, stats.correct), wrong: Math.max(existing.wrong, stats.wrong) };
     }
     this.save({ version: 1, customWords: [...merged.values()], bookmarkIds: [...new Set([...this.state.bookmarkIds, ...incoming.bookmarkIds])],
-      settings: input.settings === undefined ? this.state.settings : incoming.settings,
       history: [...history.values()].sort((a, b) => Date.parse(b.answeredAt) - Date.parse(a.answeredAt)).slice(0, 50), wordStats,
       round: this.state.round ?? incoming.round });
   }

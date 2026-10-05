@@ -25,8 +25,7 @@
     <p id="storage-error" class="notice error" role="alert" hidden></p>
     <section id="quiz-view" aria-label="日文單字測驗">
       <form id="quiz-setup" class="setup-card">
-      <h1>開始一輪測驗</h1>
-      <p class="history-note">選擇難度與題數，優先練習較容易答錯的單字。</p>
+      <h1>開始測驗</h1>
       <fieldset id="category"><legend>題目分類</legend>
         <label><input type="radio" name="category" value="all" checked>全部</label>
         <label><input type="radio" name="category" value="N5">N5</label>
@@ -37,31 +36,29 @@
         <label><input type="radio" name="category" value="bookmark">我的書籤</label>
         <label><input type="radio" name="category" value="custom">自訂單字</label>
       </fieldset>
-      <div class="setup-count"><label for="round-count">題數（1–100）</label><input id="round-count" type="number" min="1" max="100" step="1" value="10" required><span id="pool-count" class="badge"></span></div>
-      <p id="pool-note" class="history-note"></p>
+      <div class="setup-count"><label for="round-count">題數</label><input id="round-count" type="number" min="1" max="100" step="1" value="10" required><span id="pool-count" class="badge"></span></div>
       <button id="start-quiz" type="submit">開始測驗</button>
       </form>
       <div id="round-play" class="round-play" hidden>
-      <div class="section-heading round-heading"><span id="round-progress" class="badge" aria-live="polite"></span><button id="change-setup" class="secondary" type="button">重新選擇</button></div>
+      <div class="section-heading round-heading"><span id="round-progress" class="badge" aria-live="polite"></span><button id="change-setup" class="secondary" type="button">提前結束測驗</button></div>
       <div class="quiz-content"><div class="quiz-card"><div class="question-panel">
         <p id="question-category" class="eyebrow"></p>
         <h2 id="question" lang="ja"></h2>
         <p id="empty-quiz" hidden>這個分類還沒有單字。可先新增自訂單字，或把答過的題目加入書籤。</p>
         <form id="answer-form">
-          <label for="yourAnswer">讀音</label>
-          <div class="answer-row"><input id="yourAnswer" type="text" lang="ja" placeholder="輸入平假名或片假名" maxlength="200" autocomplete="off" autocapitalize="off" spellcheck="false" required><button id="answer-submit" type="submit">確認答案</button></div>
+          <div class="answer-row"><input id="yourAnswer" type="text" lang="ja" aria-label="讀音，按 Enter 送出答案" placeholder="輸入讀音，按 Enter 作答" enterkeyhint="done" maxlength="200" autocomplete="off" autocapitalize="off" spellcheck="false" required></div>
         </form>
       </div>
       <div id="last-result" class="result-card" aria-live="polite" hidden>
-        <div class="section-heading result-heading"><h2 id="solution"></h2><div class="actions"><button id="add-bookmark-button" type="button">加入書籤</button></div></div>
-        <dl><div><dt>本題單字</dt><dd id="lastQuestion" lang="ja"></dd></div><div><dt>你的答案</dt><dd id="yourLastAnswer" lang="ja"></dd></div><div><dt>中文解釋</dt><dd id="lastExplanation"></dd></div><div><dt>正確讀音</dt><dd id="lastAnswer" lang="ja"></dd></div></dl>
-        <div class="next-action"><button id="next-question" type="button">下一題</button></div>
+        <div class="section-heading result-heading"><h2 id="solution"></h2></div>
+        <dl><div><dt>上一題</dt><dd id="lastQuestion" lang="ja"></dd></div><div><dt>你的答案</dt><dd id="yourLastAnswer" lang="ja"></dd></div><div><dt>正確讀音</dt><dd id="lastAnswer" lang="ja"></dd></div><div><dt>中文解釋</dt><dd id="lastExplanation"></dd></div></dl>
       </div></div></div></div>
       <div id="round-summary" class="round-summary" hidden>
         <div class="section-heading"><h1>本輪結果</h1><span id="round-score" class="badge" aria-live="polite"></span></div>
         <p id="round-totals" class="history-note"></p>
         <div class="round-actions"><button id="retry-wrong" type="button">重練本輪錯題</button><button id="another-round" type="button">再來一輪</button><button id="reselect-round" class="secondary" type="button">重新選擇難度、題數</button></div>
         <div class="table-scroll"><table id="round-table"><caption class="sr-only">本輪答題紀錄</caption><thead><tr><th>題號</th><th>單字</th><th>結果</th><th>你的答案</th><th>正確讀音</th><th>操作</th></tr></thead><tbody></tbody></table></div>
+        <p id="round-empty" class="empty" hidden>這一輪尚未作答。</p>
         <div id="round-pagination" class="pagination"><button id="round-prev" class="secondary" type="button">上一頁</button><span id="round-page" aria-live="polite"></span><button id="round-next" class="secondary" type="button">下一頁</button></div>
       </div>
     </section>
@@ -89,18 +86,15 @@
   </main>
   <dialog id="settings-dialog" aria-labelledby="settings-heading">
     <div class="section-heading"><h2 id="settings-heading">設定</h2><button id="close-settings" class="secondary" type="button">關閉</button></div>
-    <div class="settings-tabs" role="tablist" aria-label="設定分類"><button id="settings-practice-tab" class="secondary" type="button" role="tab" aria-controls="settings-practice" aria-selected="true">練習與備份</button><button id="settings-source-tab" class="secondary" type="button" role="tab" aria-controls="settings-source" aria-selected="false" tabindex="-1">單字來源</button></div>
+    <div class="settings-tabs" role="tablist" aria-label="設定分類"><button id="settings-practice-tab" class="secondary" type="button" role="tab" aria-controls="settings-practice" aria-selected="true">資料備份</button><button id="settings-source-tab" class="secondary" type="button" role="tab" aria-controls="settings-source" aria-selected="false" tabindex="-1">單字來源</button></div>
     <div id="settings-practice" role="tabpanel" aria-labelledby="settings-practice-tab">
-    <h3>練習設定</h3>
-    <label class="toggle-label"><input id="auto-bookmark-wrong" type="checkbox">答錯時自動加入書籤</label>
-    <p>設定、測驗進度、單字統計與最近 50 題答題歷史保存在此瀏覽器。</p>
     <h3>資料備份</h3>
-    <p>單字、書籤、設定與答題歷史保存在此瀏覽器，不需登入；更換裝置或清除網站資料前，可先匯出備份。</p>
+    <p>單字、書籤、測驗進度、累計統計與答題歷史保存在此瀏覽器，不需登入；更換裝置或清除網站資料前，可先匯出備份。</p>
     <div class="actions"><button id="export-data" type="button" class="secondary">匯出備份</button><button id="import-data" type="button" class="secondary">匯入備份</button><input id="import-file" type="file" accept="application/json,.json" hidden></div>
     </div>
     <div id="settings-source" role="tabpanel" aria-labelledby="settings-source-tab" hidden>
     <h3>單字來源</h3>
-    <p>內建共 7,989 筆，涵蓋 N1–N5。擴充資料來自 <a href="https://github.com/tomoshi-app/tomoshi-dict-data" target="_blank" rel="noopener">Tomoshi Open Data</a>：JMdict © EDRDG、繁體中文翻譯 © Y1Z；分級源自 Jonathan Waller／yomitan-jlpt-vocab。</p>
+    <p>可測驗共 {{VOCABULARY_COUNT}} 筆，涵蓋 N1–N5。擴充資料來自 <a href="https://github.com/tomoshi-app/tomoshi-dict-data" target="_blank" rel="noopener">Tomoshi Open Data</a>：JMdict © EDRDG、繁體中文翻譯 © Y1Z；分級源自 Jonathan Waller／yomitan-jlpt-vocab。</p>
     <p class="source-note">N1–N5 為社群分級，僅供學習參考。新增中文解釋含 AI 輔助翻譯。資料經篩選、去重與格式轉換，以 <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">CC BY-SA 4.0</a> 分享。</p>
     <div class="actions source-links"><a href="/vocabulary-notice.txt" target="_blank">完整來源說明</a><a href="/jlpt-extended.json" download>下載擴充資料</a></div>
     </div>
