@@ -17,6 +17,8 @@ let composing = false, compositionEndAt = -Infinity;
 const tablePages = { bookmark: 0, custom: 0, round: 0 };
 let detailPages = [], detailPage = 0;
 let editingCustomId = null;
+let noticeTimer;
+let storageWarningShown = false;
 
 function renderDetail() {
   $('#word-detail').textContent = detailPages[detailPage];
@@ -36,9 +38,22 @@ function openDetail(word) {
 
 function showNotice(message, isError = false) {
   const notice = $('#notice');
+  clearTimeout(noticeTimer);
+  if (!message) {
+    notice.hidePopover?.();
+    notice.hidden = true;
+    return;
+  }
   notice.textContent = message;
-  notice.hidden = !message;
   notice.classList.toggle('error', isError);
+  notice.setAttribute('role', isError ? 'alert' : 'status');
+  notice.setAttribute('aria-live', isError ? 'assertive' : 'polite');
+  notice.hidden = false;
+  notice.showPopover?.();
+  noticeTimer = setTimeout(() => {
+    notice.hidePopover?.();
+    notice.hidden = true;
+  }, isError ? 5000 : 3000);
 }
 function errorMessage(error) {
   if (error.name === 'QuotaExceededError') return '本機儲存空間不足，資料尚未儲存。請先匯出備份並整理瀏覽器空間。';
@@ -54,9 +69,8 @@ function updateCounts() {
   $('#custom-count').textContent = repository.state.customWords.length;
   $('#create-custom-button').disabled = repository.readOnly;
   $('#import-data').disabled = repository.readOnly;
-  const error = $('#storage-error');
-  error.hidden = !repository.readOnly;
-  error.textContent = repository.readOnly ? '無法讀取本機儲存資料。原有內容未被覆寫；仍可練習內建題庫，請先檢查瀏覽器儲存權限或資料格式。' : '';
+  if (repository.readOnly && !storageWarningShown) showNotice('無法讀取本機儲存資料。原有內容未被覆寫；仍可練習內建題庫，請先檢查瀏覽器儲存權限或資料格式。', true);
+  storageWarningShown = repository.readOnly;
 }
 function pool() { return repository.wordsIn(category); }
 function renderQuiz() {
@@ -75,7 +89,8 @@ function renderQuiz() {
     lastResult = null;
     const correct = round.results.filter(item => item.correct).length;
     $('#round-score').textContent = round.results.length ? `正確率 ${(correct / round.results.length * 100).toFixed(1)}%` : '正確率 —';
-    $('#round-totals').textContent = `已答 ${round.results.length} 題`;
+    const difficulty = { all: '全部', bookmark: '我的書籤', custom: '自訂單字' }[round.category] ?? round.category;
+    $('#round-totals').textContent = `${difficulty} · 已答 ${round.results.length} 題`;
     $('#retry-wrong').disabled = !round.results.some((item, index) => !item.correct && !isKanaOnly(round.words[index].question));
     $('#round-empty').hidden = round.results.length > 0;
     renderRoundResults();
@@ -95,7 +110,7 @@ function renderQuiz() {
   $('#last-result').classList.toggle('result-empty', !lastResult);
   $('#last-result').setAttribute('aria-hidden', String(!lastResult));
   if (lastResult) {
-    $('#solution').textContent = lastResult.correct ? '正解！' : '再記住一次';
+    $('#solution').textContent = lastResult.correct ? '正解' : '再記住一次';
     $('#solution').className = lastResult.correct ? 'correct' : 'incorrect';
     $('#lastQuestion').textContent = lastResult.question;
     $('#lastAnswer').textContent = lastResult.answer;
@@ -412,7 +427,7 @@ function openCustom(word = null) {
     $('#custom-answer').value = word.answer;
     $('#custom-explanation').value = word.explanation;
   }
-  $('#custom-error').hidden = true;
+  showNotice('');
   $('#custom-dialog').showModal();
   $('#custom-question').focus();
 }
@@ -429,7 +444,7 @@ $('#custom-form').addEventListener('submit', (event) => {
     updateCounts();
     renderRoute();
     showNotice(`${wasEditing ? '已更新' : '已儲存'}「${word.question}」。`);
-  } catch (error) { $('#custom-error').textContent = errorMessage(error); $('#custom-error').hidden = false; }
+  } catch (error) { showNotice(errorMessage(error), true); }
 });
 $('#export-data').addEventListener('click', () => {
   const blob = new Blob([repository.exportData()], { type: 'application/json' });

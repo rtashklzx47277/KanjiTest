@@ -20,8 +20,7 @@
     <button id="open-settings" class="gear secondary" type="button" aria-label="設定" title="設定" aria-haspopup="dialog"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="m9 3-.6 2.1-1.8 1L4.5 6 3 8.6l1.6 1.6v2.1L3 14l1.5 2.6 2.1-.4 1.8 1L9 20h3l.6-2.8 1.8-1 2.1.4L18 14l-1.6-1.7v-2.1L18 8.6 16.5 6l-2.1.2-1.8-1L12 3Z" transform="translate(1.5 .5)"/><circle cx="12" cy="12" r="3"/></svg></button>
   </header>
   <main>
-    <p id="notice" class="notice" role="status" aria-live="polite" hidden></p>
-    <p id="storage-error" class="notice error" role="alert" hidden></p>
+    <p id="notice" class="notice" role="status" aria-live="polite" popover="manual" hidden></p>
     <section id="quiz-view" aria-label="日文單字測驗">
       <form id="quiz-setup" class="setup-card">
       <h1>開始測驗</h1>
@@ -101,7 +100,7 @@
       <label for="custom-question">單字</label><input id="custom-question" name="question" maxlength="200" placeholder="例如：図書館" required>
       <label for="custom-answer">讀音</label><input id="custom-answer" name="answer" maxlength="200" placeholder="例如：としょかん" required>
       <label for="custom-explanation">中文解釋</label><input id="custom-explanation" name="explanation" maxlength="500" placeholder="例如：圖書館" required>
-      <p id="custom-error" class="form-error" role="alert" hidden></p><button id="save-custom" type="submit">儲存單字</button>
+      <button id="save-custom" type="submit">儲存單字</button>
     </form>
   </dialog>
 </body>
