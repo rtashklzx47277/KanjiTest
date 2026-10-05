@@ -307,19 +307,20 @@ for (const name of ['practice', 'source']) {
 }
 $('#open-settings').addEventListener('click', () => { selectSettingsTab('practice'); updateCounts(); $('#settings-dialog').showModal(); });
 $('#close-settings').addEventListener('click', () => $('#settings-dialog').close());
-const settingsDialog = $('#settings-dialog');
-let settingsPointerOutside = false;
-function outsideSettings(event) {
-  const rect = settingsDialog.getBoundingClientRect();
-  return event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom;
+for (const dialog of document.querySelectorAll('dialog')) {
+  let pointerOutside = false;
+  const outside = (event) => {
+    const rect = dialog.getBoundingClientRect();
+    return event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom;
+  };
+  dialog.addEventListener('pointerdown', (event) => { pointerOutside = outside(event); });
+  dialog.addEventListener('pointercancel', () => { pointerOutside = false; });
+  dialog.addEventListener('close', () => { pointerOutside = false; });
+  dialog.addEventListener('click', (event) => {
+    if (pointerOutside && outside(event)) dialog.close();
+    pointerOutside = false;
+  });
 }
-settingsDialog.addEventListener('pointerdown', (event) => { settingsPointerOutside = outsideSettings(event); });
-settingsDialog.addEventListener('pointercancel', () => { settingsPointerOutside = false; });
-settingsDialog.addEventListener('close', () => { settingsPointerOutside = false; });
-settingsDialog.addEventListener('click', (event) => {
-  if (settingsPointerOutside && outsideSettings(event)) settingsDialog.close();
-  settingsPointerOutside = false;
-});
 $('#auto-bookmark-wrong').addEventListener('change', (event) => {
   const enabled = event.target.checked;
   if (mutate(() => repository.setAutoBookmarkWrong(enabled), '')) return;
