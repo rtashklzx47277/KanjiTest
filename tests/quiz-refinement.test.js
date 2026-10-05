@@ -50,7 +50,7 @@ test('early end keeps only real answers and statistics, survives reload and reje
   assert.equal(round.position, 3);
   assert.equal(round.results.length, 3);
   assert.equal(round.results.filter(item => item.correct).length, 2);
-  assert.equal(reloaded.history.length, 3);
+  assert.equal('history' in reloaded.state, false);
   assert.equal(Object.values(reloaded.state.wordStats).reduce((n, item) => n + item.correct + item.wrong, 0), 3);
   assert.throws(() => reloaded.recordAttempt(round.words[3], 'wrong'), /已結束/u);
 });
@@ -62,7 +62,7 @@ test('ending before any answer produces an empty summary without creating attemp
   assert.equal(repo.state.round.finished, true);
   assert.equal(repo.state.round.results.length, 0);
   assert.deepEqual(repo.state.wordStats, {});
-  assert.equal(repo.history.length, 0);
+  assert.equal('history' in repo.state, false);
 });
 
 test('old pending feedback advances on migration and unanswered kana questions are removed', () => {

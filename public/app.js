@@ -14,8 +14,9 @@ let category = 'all';
 let activeRequest = null;
 let checking = false;
 let composing = false, compositionEndAt = -Infinity;
-const tablePages = { bookmark: 0, custom: 0, history: 0, round: 0 };
+const tablePages = { bookmark: 0, custom: 0, round: 0 };
 let detailPages = [], detailPage = 0;
+let editingCustomId = null;
 
 function renderDetail() {
   $('#word-detail').textContent = detailPages[detailPage];
@@ -74,14 +75,14 @@ function renderQuiz() {
     lastResult = null;
     const correct = round.results.filter(item => item.correct).length;
     $('#round-score').textContent = round.results.length ? `正確率 ${(correct / round.results.length * 100).toFixed(1)}%` : '正確率 —';
-    $('#round-totals').textContent = `${round.finished && round.position < round.words.length ? '提前結束 · ' : ''}${round.review ? '錯題複習 · ' : ''}${round.category === 'all' ? '全部' : round.category === 'bookmark' ? '我的書籤' : round.category === 'custom' ? '自訂單字' : round.category} · 已答 ${round.results.length} / ${round.words.length} 題 · 正確 ${correct} · 錯誤 ${round.results.length - correct}`;
+    $('#round-totals').textContent = `已答 ${round.results.length} 題 · 正確 ${correct} · 錯誤 ${round.results.length - correct}`;
     $('#retry-wrong').disabled = !round.results.some((item, index) => !item.correct && !isKanaOnly(round.words[index].question));
     $('#round-empty').hidden = round.results.length > 0;
-    renderHistory('round');
+    renderRoundResults();
     return;
   }
   const next = round.words[round.position];
-  if (current?.id !== next.id) $('#yourAnswer').value = '';
+  if (current?.id !== next.id || current?.question !== next.question || current?.answer !== next.answer) $('#yourAnswer').value = '';
   current = next;
   lastResult = round.results.at(-1) ?? null;
   $('#round-progress').textContent = `${round.review ? '錯題複習 · ' : ''}第 ${round.position + 1} / ${round.words.length} 題`;
@@ -91,7 +92,8 @@ function renderQuiz() {
   $('#empty-quiz').hidden = !!current;
   $('#answer-form').hidden = !current;
   $('#yourAnswer').disabled = checking;
-  $('#last-result').hidden = !lastResult;
+  $('#last-result').classList.toggle('result-empty', !lastResult);
+  $('#last-result').setAttribute('aria-hidden', String(!lastResult));
   if (lastResult) {
     $('#solution').textContent = lastResult.correct ? '正解！' : '再記住一次';
     $('#solution').className = lastResult.correct ? 'correct' : 'incorrect';
@@ -157,6 +159,18 @@ function renderTable(kind) {
       row.append(cell);
     }
     const cell = document.createElement('td');
+    const actions = document.createElement('div');
+    actions.className = 'row-actions';
+    if (!isBookmark) {
+      const edit = document.createElement('button');
+      edit.type = 'button';
+      edit.className = 'edit-button secondary';
+      edit.textContent = '編輯';
+      edit.setAttribute('aria-label', `編輯單字：${word.question}`);
+      edit.disabled = repository.readOnly;
+      edit.addEventListener('click', () => openCustom(word));
+      actions.append(edit);
+    }
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'delete-button';
@@ -164,7 +178,8 @@ function renderTable(kind) {
     button.setAttribute('aria-label', `${isBookmark ? '移除書籤' : '刪除單字'}：${word.question}`);
     button.disabled = repository.readOnly;
     button.addEventListener('click', () => mutate(() => isBookmark ? repository.deleteBookmark(word.id) : repository.deleteCustom(word.id), isBookmark ? '已移除書籤。' : '已刪除單字及其書籤。'));
-    cell.append(button);
+    actions.append(button);
+    cell.append(actions);
     row.append(cell);
     tbody.append(row);
   }
@@ -177,9 +192,8 @@ function renderTable(kind) {
   $(`#${kind}-prev`).disabled = tablePages[kind] === 0;
   $(`#${kind}-next`).disabled = tablePages[kind] === pageCount - 1;
 }
-function renderHistory(kind = 'history') {
-  const history = kind === 'round' ? practice.state.round.results : repository.history;
-  if (kind === 'history') $('#history-summary').textContent = `${history.length} 題 · 正確 ${history.filter(item => item.correct).length}`;
+function renderRoundResults() {
+  const kind = 'round', history = practice.state.round.results;
   const available = document.querySelector('main').getBoundingClientRect().bottom - $(`#${kind}-table`).parentElement.getBoundingClientRect().top - 110;
   const pageSize = Math.max(1, Math.floor(available / (innerWidth <= 650 ? 144 : 72)));
   const pageCount = Math.max(1, Math.ceil(history.length / pageSize));
@@ -188,19 +202,17 @@ function renderHistory(kind = 'history') {
   tbody.replaceChildren();
   for (const [offset, item] of history.slice(tablePages[kind] * pageSize, (tablePages[kind] + 1) * pageSize).entries()) {
     const row = document.createElement('tr');
-    const date = new Date(item.answeredAt);
-    const time = new Intl.DateTimeFormat('zh-TW', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }).format(date);
-    const fields = [kind === 'round' ? `${tablePages[kind] * pageSize + offset + 1}` : time, item.question, item.correct ? '正確' : '錯誤', item.submitted, item.answer];
+    const fields = [`${tablePages[kind] * pageSize + offset + 1}`, item.question, item.correct ? '正確' : '錯誤', item.submitted, item.answer];
     for (const [index, text] of fields.entries()) {
       const cell = document.createElement('td');
       const content = document.createElement(index === 1 ? 'button' : 'span');
       content.className = 'cell-content';
       content.textContent = text;
-      content.title = index === 0 ? date.toLocaleString('zh-TW') : text;
+      content.title = text;
       if (index === 1) {
         content.type = 'button';
         content.classList.add('word-link');
-        content.setAttribute('aria-label', `歷史單字詳細：${item.question}`);
+        content.setAttribute('aria-label', `本輪單字詳細：${item.question}`);
         content.addEventListener('click', () => openDetail(item));
       }
       if (index === 2) cell.className = item.correct ? 'history-correct' : 'history-incorrect';
@@ -215,13 +227,12 @@ function renderHistory(kind = 'history') {
     button.className = 'history-bookmark secondary';
     button.textContent = missing ? '單字已刪除' : bookmarked ? '已加入書籤' : '加入書籤';
     button.disabled = missing || bookmarked || repository.readOnly;
-    button.setAttribute('aria-label', `歷史加入書籤：${item.question}`);
+    button.setAttribute('aria-label', `本輪加入書籤：${item.question}`);
     button.addEventListener('click', () => mutate(() => repository.addBookmark(item.wordId), '已加入書籤。'));
     cell.append(button);
     row.append(cell);
     tbody.append(row);
   }
-  if (kind === 'history') $('#history-empty').hidden = !!history.length;
   $(`#${kind}-table`).hidden = !history.length;
   $(`#${kind}-pagination`).hidden = !history.length;
   $(`#${kind}-page`).textContent = `${tablePages[kind] + 1} / ${pageCount} · ${history.length} 題`;
@@ -229,8 +240,9 @@ function renderHistory(kind = 'history') {
   $(`#${kind}-next`).disabled = tablePages[kind] === pageCount - 1;
 }
 function renderRoute() {
+  if (location.pathname.replace(/\/$/u, '') === '/history') history.replaceState(null, '', '/quiz');
   const path = location.pathname.replace(/\/$/u, '') || '/quiz';
-  const view = path === '/bookmarks' ? 'bookmarks' : path === '/words' ? 'words' : path === '/history' ? 'history' : 'quiz';
+  const view = path === '/bookmarks' ? 'bookmarks' : path === '/words' ? 'words' : 'quiz';
   const queryCategory = new URLSearchParams(location.search).get('category');
   if (view === 'quiz') {
     category = CATEGORIES.includes(queryCategory) ? queryCategory : practice.state.round?.category ?? category;
@@ -238,15 +250,14 @@ function renderRoute() {
       try { practice.clearRound(); } catch (error) { category = practice.state.round.category; showNotice(errorMessage(error), true); }
     }
   }
-  for (const name of ['quiz', 'bookmarks', 'words', 'history']) $(`#${name}-view`).hidden = view !== name;
+  for (const name of ['quiz', 'bookmarks', 'words']) $(`#${name}-view`).hidden = view !== name;
   for (const link of document.querySelectorAll('nav a[data-view]')) {
     if (link.dataset.view === view) link.setAttribute('aria-current', 'page');
     else link.removeAttribute('aria-current');
   }
   if (view === 'quiz') renderQuiz();
-  else if (view === 'history') renderHistory();
   else renderTable(view === 'bookmarks' ? 'bookmark' : 'custom');
-  document.title = view === 'quiz' ? '日文單字測驗' : `${view === 'bookmarks' ? '我的書籤' : view === 'history' ? '答題歷史' : '自訂單字'}｜日文單字測驗`;
+  document.title = view === 'quiz' ? '日文單字測驗' : `${view === 'bookmarks' ? '我的書籤' : '自訂單字'}｜日文單字測驗`;
 }
 function cancelCheck() {
   activeRequest?.abort();
@@ -263,7 +274,7 @@ document.addEventListener('click', (event) => {
   const link = event.target.closest('a');
   if (!link || event.defaultPrevented || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
   const url = new URL(link.href);
-  if (url.origin !== location.origin || !['/quiz', '/bookmarks', '/words', '/history'].includes(url.pathname)) return;
+  if (url.origin !== location.origin || !['/quiz', '/bookmarks', '/words'].includes(url.pathname)) return;
   event.preventDefault();
   navigate(url.pathname + url.search);
 });
@@ -352,7 +363,7 @@ for (const kind of ['bookmark', 'custom']) {
   for (const [direction, change] of [['prev', -1], ['next', 1]]) $(`#${kind}-${direction}`).addEventListener('click', () => { tablePages[kind] += change; renderTable(kind); });
 }
 window.addEventListener('resize', renderRoute);
-for (const kind of ['history', 'round']) for (const [direction, change] of [['prev', -1], ['next', 1]]) $('#' + kind + '-' + direction).addEventListener('click', () => { tablePages[kind] += change; renderHistory(kind); });
+for (const [direction, change] of [['prev', -1], ['next', 1]]) $('#round-' + direction).addEventListener('click', () => { tablePages.round += change; renderRoundResults(); });
 function selectSettingsTab(name) {
   for (const panel of ['practice', 'source']) {
     const selected = panel === name;
@@ -391,21 +402,33 @@ for (const dialog of document.querySelectorAll('dialog')) {
 $('#close-word').addEventListener('click', () => $('#word-dialog').close());
 $('#word-prev').addEventListener('click', () => { detailPage--; renderDetail(); });
 $('#word-next').addEventListener('click', () => { detailPage++; renderDetail(); });
-$('#create-custom-button').addEventListener('click', () => {
+function openCustom(word = null) {
+  editingCustomId = word?.id ?? null;
   $('#custom-form').reset();
+  $('#custom-heading').textContent = word ? '編輯自訂單字' : '新增自訂單字';
+  $('#save-custom').textContent = word ? '儲存修改' : '儲存單字';
+  if (word) {
+    $('#custom-question').value = word.question;
+    $('#custom-answer').value = word.answer;
+    $('#custom-explanation').value = word.explanation;
+  }
   $('#custom-error').hidden = true;
   $('#custom-dialog').showModal();
   $('#custom-question').focus();
-});
+}
+$('#create-custom-button').addEventListener('click', () => openCustom());
+$('#custom-dialog').addEventListener('close', () => { editingCustomId = null; });
 $('#close-dialog').addEventListener('click', () => $('#custom-dialog').close());
 $('#custom-form').addEventListener('submit', (event) => {
   event.preventDefault();
   try {
-    const word = repository.addCustom(Object.fromEntries(new FormData(event.target)));
+    const input = Object.fromEntries(new FormData(event.target));
+    const wasEditing = editingCustomId !== null;
+    const word = wasEditing ? repository.updateCustom(editingCustomId, input) : repository.addCustom(input);
     $('#custom-dialog').close();
     updateCounts();
     renderRoute();
-    showNotice(`已儲存「${word.question}」。`);
+    showNotice(`${wasEditing ? '已更新' : '已儲存'}「${word.question}」。`);
   } catch (error) { $('#custom-error').textContent = errorMessage(error); $('#custom-error').hidden = false; }
 });
 $('#export-data').addEventListener('click', () => {

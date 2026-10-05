@@ -175,9 +175,6 @@ dialog p { margin: 8px 0; font-size: 14px; }
   dialog p { margin: 6px 0; font-size: 12px; }
   dialog h3 { margin: 10px 0 4px; }
 }
-@media (min-width: 651px) and (max-height: 650px) {
-  .quiz-content:has(.result-card:not([hidden])) { display: grid; grid-template-columns: 1fr 1fr; align-content: center; }
-}
 @media (max-height: 480px) {
   #settings-dialog { width: min(640px, calc(100% - 28px)); }
   #custom-dialog { width: min(600px, calc(100% - 28px)); }
@@ -209,12 +206,6 @@ dialog p { margin: 8px 0; font-size: 14px; }
 @media (max-height: 650px) {
   .question-panel, .result-card { padding: 12px 14px; }
 }
-@media (min-width: 651px) and (max-height: 650px) {
-  .quiz-content:has(.result-card:not([hidden])) { display: flex; }
-  .quiz-card:has(.result-card:not([hidden])) { display: grid; grid-template-columns: 1fr 1fr; align-items: center; }
-  .quiz-card:has(.result-card:not([hidden])) .result-card { border-top: 0; border-left: 1px solid #465063; }
-  #solution { font-size: 30px; }
-}
 @media (max-width: 650px) and (max-height: 650px) {
   .quiz-controls { gap: 4px 8px; }
   .result-card .result-heading { gap: 2px; }
@@ -230,9 +221,6 @@ dialog p { margin: 8px 0; font-size: 14px; }
 .history-note { font-size: 13px; color: #b6c2d3; margin: 0; }
 .history-correct { color: #94d7a5; }
 .history-incorrect { color: #ffa0a0; }
-#history-table th:first-child { width: 110px; }
-#history-table th:nth-child(3) { width: 65px; }
-#history-table th:last-child, #history-table td:last-child { width: 116px; }
 .history-bookmark { font-size: 12px; padding: 5px 8px; }
 @media (max-width: 760px) {
   .navbar { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 6px; padding: 8px 12px; }
@@ -240,17 +228,6 @@ dialog p { margin: 8px 0; font-size: 14px; }
   .gear { position: absolute; right: 12px; top: 6px; width: 34px; height: 34px; }
   nav { width: 100%; gap: 4px; justify-content: space-between; }
   nav a { padding: 6px 8px; font-size: 13px; white-space: nowrap; }
-}
-@media (max-width: 650px) {
-  #history-table tbody tr { height: 144px; grid-template-columns: 1fr 1fr 90px; grid-template-rows: 24px 42px 64px; }
-  #history-table td:first-child { grid-column: 1 / 3; grid-row: 1; font-size: 11px; color: #9cb2d2; }
-  #history-table td:nth-child(2) { grid-column: 1 / 3; grid-row: 2; }
-  #history-table td:nth-child(3) { grid-column: 3; grid-row: 1; text-align: right; }
-  #history-table td:nth-child(4) { grid-column: 1; grid-row: 3; }
-  #history-table td:nth-child(5) { grid-column: 2; grid-row: 3; }
-  #history-table td:nth-child(4)::before { content: '你的答案'; display: block; font-size: 10px; color: #9cb2d2; }
-  #history-table td:nth-child(5)::before { content: '正確讀音'; display: block; font-size: 10px; color: #9cb2d2; }
-  #history-table td:last-child { width: auto; grid-column: 3; grid-row: 2 / 4; }
 }
 @media (max-width: 380px) {
   nav a { padding: 6px 4px; font-size: 12px; }
@@ -304,4 +281,59 @@ dialog p { margin: 8px 0; font-size: 14px; }
   .setup-card h1 { font-size: 22px; }
   .round-actions { gap: 6px; margin-top: 6px; }
   .round-actions button { font-size: 12px; padding: 5px 8px; }
+}
+
+/* Reserve both panels before the first answer; always stack them vertically. */
+.quiz-card { --question-height: 250px; --result-height: 270px; display: flex; flex-direction: column; height: calc(var(--question-height) + var(--result-height) + 2px); max-height: 100%; }
+.question-panel { height: var(--question-height); flex: none; padding: 18px 24px; display: flex; flex-direction: column; justify-content: center; }
+#question { font-size: 44px; min-height: 2.5em; }
+#answer-form { width: 100%; margin: 0 auto; }
+#yourAnswer, #yourAnswer::placeholder { text-align: center; }
+.result-card { height: var(--result-height); flex: none; padding: 16px 24px; display: flex; flex-direction: column; justify-content: center; }
+.result-card.result-empty { visibility: hidden; }
+.result-card .result-heading { margin-bottom: 8px; }
+#solution { min-height: 1.2em; }
+.result-card dl { gap: 4px; }
+.result-card dl > div { height: 2.4em; min-height: 2.4em; }
+.result-card dd { line-height: 1.2; }
+.round-overview { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; flex: none; }
+.round-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; margin: 0 0 0 auto; }
+.row-actions { display: flex; gap: 6px; }
+.row-actions button { font-size: 12px; padding: 4px 8px; }
+#custom-table th:last-child, #custom-table td:last-child { width: 140px; }
+@media (max-width: 650px) {
+  .quiz-card { --question-height: 190px; --result-height: 220px; }
+  .question-panel, .result-card { padding: 12px 14px; }
+  #question { font-size: 32px; }
+  .round-actions { max-width: 100%; gap: 6px; }
+  .round-actions button { font-size: 12px; padding: 5px 8px; }
+  .round-actions button:last-child { grid-column: auto; }
+  #custom-table tbody tr { grid-template-columns: 1fr 1fr 64px; }
+  #custom-table td:last-child { width: auto; }
+  #custom-table .row-actions { flex-direction: column; gap: 5px; }
+}
+@media (max-height: 650px) {
+  .quiz-card { --question-height: 180px; --result-height: 210px; }
+  .question-panel, .result-card { padding: 12px 14px; }
+  #question { font-size: 28px; }
+  #solution { font-size: 30px; }
+}
+@media (max-width: 650px) and (max-height: 650px) {
+  .quiz-card { --question-height: 160px; --result-height: 200px; }
+  .question-panel, .result-card { padding: 6px 14px; }
+  #solution { font-size: 28px; }
+}
+@media (max-height: 480px) {
+  .quiz-card { --question-height: 116px; --result-height: 128px; }
+  .question-panel, .result-card { padding: 4px 12px; }
+  #question { font-size: 22px; margin: 2px 0; }
+  #question-category { font-size: 11px; line-height: 1.3; }
+  #yourAnswer { padding: 5px 10px; font-size: 12px; }
+  #solution { font-size: 24px; }
+  .result-card .result-heading { margin-bottom: 4px; }
+  .result-card dl { font-size: 12px; gap: 2px; }
+  .result-card dt { font-size: 11px; }
+  .result-card dl > div { height: 1.6em; min-height: 1.6em; }
+  .result-card dd { -webkit-line-clamp: 1; }
+  .round-heading { margin-bottom: 4px; }
 }

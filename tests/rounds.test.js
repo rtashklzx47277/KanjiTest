@@ -27,7 +27,7 @@ test('weighted first draws match expected probabilities and complete rounds neve
   for (const count of [0, 101, 1.5, NaN, '10']) assert.throws(() => selectRound(pool, count));
 });
 
-test('100-question round retains all results while global history keeps 50 and progress reloads', () => {
+test('100-question round retains all results and progress reloads without global history', () => {
   const saved = storage();
   let repository = new LocalRepository(words, saved);
   repository.startRound('N5', 100, { random: () => 0 });
@@ -43,7 +43,7 @@ test('100-question round retains all results while global history keeps 50 and p
   assert.equal(repository.state.round.position, 100);
   assert.equal(repository.state.round.results.length, 100);
   assert.equal(repository.state.round.results.filter(item => item.correct).length, 50);
-  assert.equal(repository.history.length, 50);
+  assert.equal('history' in repository.state, false);
   assert.equal(Object.values(repository.state.wordStats).reduce((n, item) => n + item.correct + item.wrong, 0), 100);
 });
 
@@ -62,15 +62,10 @@ test('retry uses only incorrect words and keeps original selected count for anot
   assert.deepEqual(new Set(repository.state.round.words.map(word => word.id)), new Set(wrong.map(word => word.id)));
 });
 
-test('per-word totals survive history rollover and migrate only available old history', () => {
+test('per-word totals retain all attempts independently of removed history', () => {
   const repository = repo();
   for (let i = 0; i < 65; i++) repository.recordAttempt(words[0], i < 15 ? 'wrong' : words[0].answer);
   assert.deepEqual(repository.state.wordStats[words[0].id], { correct: 50, wrong: 15 });
-  const legacy = JSON.parse(repository.exportData());
-  delete legacy.wordStats;
-  const oldStorage = storage(); oldStorage.raw = JSON.stringify(legacy);
-  const migrated = new LocalRepository(words, oldStorage);
-  assert.deepEqual(migrated.state.wordStats[words[0].id], { correct: 50, wrong: 0 });
   const restored = repo();
   restored.importData(JSON.parse(repository.exportData()));
   restored.importData(JSON.parse(repository.exportData()));

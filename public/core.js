@@ -60,7 +60,7 @@ export function validateCustomWord(input) {
   return word;
 }
 
-const emptyState = () => ({ version: 1, customWords: [], bookmarkIds: [], history: [], wordStats: {}, round: null });
+const emptyState = () => ({ version: 1, customWords: [], bookmarkIds: [], wordStats: {}, round: null });
 
 function validateHistory(history = [], limit = 50) {
   if (!Array.isArray(history) || history.length > limit) throw new Error(`答題歷史格式不正確，最多保存 ${limit} 題。`);
@@ -141,10 +141,11 @@ export function validateState(input, builtins) {
   });
   const bookmarkIds = [...new Set(input.bookmarkIds)];
   if (bookmarkIds.some((id) => typeof id !== 'string' || !knownIds.has(id))) throw new Error('書籤包含不存在的單字。');
-  const history = validateHistory(input.history);
+  const legacyHistory = validateHistory(input.history);
   // Ignore the removed autoBookmarkWrong preference in older saved data and backups.
-  return { version: 1, customWords, bookmarkIds, history,
-    wordStats: validateStats(input.wordStats, history), round: validateRound(input.round) };
+  // Migrate available legacy attempts into counters, then stop retaining the history feature.
+  return { version: 1, customWords, bookmarkIds,
+    wordStats: validateStats(input.wordStats, legacyHistory), round: validateRound(input.round) };
 }
 
 export class LocalRepository {
@@ -168,7 +169,6 @@ export class LocalRepository {
 
   get allWords() { return [...this.builtins, ...this.state.customWords]; }
   get customWords() { return [...this.state.customWords].reverse(); }
-  get history() { return [...this.state.history]; }
   get bookmarks() {
     const words = new Map(this.allWords.map((word) => [word.id, word]));
     return [...this.state.bookmarkIds].reverse().map((id) => words.get(id));
@@ -192,6 +192,17 @@ export class LocalRepository {
   addCustom(input, id = `custom:${globalThis.crypto.randomUUID()}`) {
     const word = { id, category: 'custom', ...validateCustomWord(input) };
     this.save({ ...this.state, customWords: [...this.state.customWords, word] });
+    return word;
+  }
+  updateCustom(id, input) {
+    if (!this.state.customWords.some(word => word.id === id)) throw new Error('找不到這個自訂單字。');
+    const word = { id, category: 'custom', ...validateCustomWord(input) };
+    let round = this.state.round;
+    if (round && !round.finished) {
+      // Preserve graded snapshots; update only questions that have not been answered yet.
+      round = { ...round, words: round.words.map((item, index) => index >= round.results.length && item.id === id ? word : item) };
+    }
+    this.save({ ...this.state, customWords: this.state.customWords.map(item => item.id === id ? word : item), round });
     return word;
   }
   deleteCustom(id) {
@@ -231,7 +242,7 @@ export class LocalRepository {
       if (round.words[round.position].id !== word.id || round.results.length !== round.position) throw new Error('這一題已完成或測驗進度已改變。');
       round = { ...round, position: round.position + 1, results: [...round.results, attempt] };
     }
-    this.save({ ...this.state, history: [attempt, ...this.state.history].slice(0, 50), wordStats, round });
+    this.save({ ...this.state, wordStats, round });
     return attempt;
   }
   exportData() { return this.readOnly && this.rawData !== null ? this.rawData : JSON.stringify(this.state, null, 2); }
@@ -243,12 +254,6 @@ export class LocalRepository {
       if (existing && JSON.stringify(existing) !== JSON.stringify(word)) throw new Error('匯入檔與現有單字 ID 衝突，請先核對資料。');
       merged.set(word.id, word);
     }
-    const history = new Map(this.state.history.map((item) => [item.id, item]));
-    for (const item of incoming.history) {
-      const existing = history.get(item.id);
-      if (existing && JSON.stringify(existing) !== JSON.stringify(item)) throw new Error('匯入檔與現有答題歷史 ID 衝突。');
-      history.set(item.id, item);
-    }
     const wordStats = { ...this.state.wordStats };
     for (const [id, stats] of Object.entries(incoming.wordStats)) {
       const existing = wordStats[id] ?? { correct: 0, wrong: 0 };
@@ -256,7 +261,7 @@ export class LocalRepository {
       wordStats[id] = { correct: Math.max(existing.correct, stats.correct), wrong: Math.max(existing.wrong, stats.wrong) };
     }
     this.save({ version: 1, customWords: [...merged.values()], bookmarkIds: [...new Set([...this.state.bookmarkIds, ...incoming.bookmarkIds])],
-      history: [...history.values()].sort((a, b) => Date.parse(b.answeredAt) - Date.parse(a.answeredAt)).slice(0, 50), wordStats,
+      wordStats,
       round: this.state.round ?? incoming.round });
   }
 }
