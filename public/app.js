@@ -151,7 +151,7 @@ function renderRoute() {
   }
   if (view === 'quiz') renderQuiz();
   else renderTable(view === 'bookmarks' ? 'bookmark' : 'custom');
-  document.title = `${view === 'quiz' ? '日文單字測驗' : view === 'bookmarks' ? '我的書籤' : '自訂單字'}｜KanjiTest`;
+  document.title = view === 'quiz' ? '日文單字測驗' : `${view === 'bookmarks' ? '我的書籤' : '自訂單字'}｜日文單字測驗`;
 }
 function cancelCheck() {
   activeRequest?.abort();

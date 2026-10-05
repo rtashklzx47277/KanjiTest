@@ -4,14 +4,14 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="日文單字測驗：N1–N5 題庫、自訂單字與書籤。">
-  <title>KanjiTest｜日文單字測驗</title>
+  <title>日文單字測驗</title>
   <link rel="stylesheet" href="/style.css">
   <script id="builtin-words" type="application/json">{{BUILTIN_WORDS}}</script>
   <script type="module" src="/app.js"></script>
 </head>
 <body>
   <header class="navbar">
-    <a class="brand" href="/quiz">KanjiTest <span>日文單字測驗</span></a>
+    <a class="brand" href="/quiz">日文單字測驗</a>
     <nav aria-label="主選單">
       <a href="/quiz" data-view="quiz">單字測驗</a>
       <a href="/bookmarks" data-view="bookmarks">我的書籤 <span id="bookmark-count">0</span></a>
@@ -22,8 +22,8 @@
   <main>
     <p id="notice" class="notice" role="status" aria-live="polite" hidden></p>
     <p id="storage-error" class="notice error" role="alert" hidden></p>
-    <section id="quiz-view" aria-labelledby="quiz-heading">
-      <div class="section-heading"><div><p class="eyebrow">每天練習一點</p><h1 id="quiz-heading">日文單字測驗</h1></div><span id="pool-count" class="badge"></span></div>
+    <section id="quiz-view" aria-label="日文單字測驗">
+      <div class="quiz-controls">
       <fieldset id="category"><legend>題目分類</legend>
         <label><input type="radio" name="category" value="all" checked>全部</label>
         <label><input type="radio" name="category" value="N5">N5</label>
@@ -34,7 +34,9 @@
         <label><input type="radio" name="category" value="bookmark">我的書籤</label>
         <label><input type="radio" name="category" value="custom">自訂單字</label>
       </fieldset>
-      <div class="quiz-content"><div class="quiz-card">
+      <span id="pool-count" class="badge"></span>
+      </div>
+      <div class="quiz-content"><div class="quiz-card"><div class="question-panel">
         <p id="question-category" class="eyebrow"></p>
         <h2 id="question" lang="ja"></h2>
         <p id="empty-quiz" hidden>這個分類還沒有單字。可先新增自訂單字，或把答過的題目加入書籤。</p>
@@ -46,7 +48,7 @@
       <div id="last-result" class="result-card" aria-live="polite" hidden>
         <div class="section-heading"><h2 id="solution"></h2><div class="actions"><button id="result-details" class="secondary" type="button">詳細</button><button id="add-bookmark-button" type="button">加入書籤</button></div></div>
         <dl><div><dt>上一題</dt><dd id="lastQuestion" lang="ja"></dd></div><div><dt>正確讀音</dt><dd id="lastAnswer" lang="ja"></dd></div><div><dt>你的答案</dt><dd id="yourLastAnswer" lang="ja"></dd></div><div><dt>中文解釋</dt><dd id="lastExplanation"></dd></div></dl>
-      </div></div>
+      </div></div></div>
     </section>
     <section id="bookmarks-view" aria-labelledby="bookmarks-heading" hidden>
       <div class="section-heading"><div><p class="eyebrow">保留想複習的單字</p><h1 id="bookmarks-heading">我的書籤</h1></div><a class="button secondary" href="/quiz?category=bookmark">練習書籤</a></div>

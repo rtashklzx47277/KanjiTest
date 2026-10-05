@@ -185,3 +185,29 @@ dialog p { margin: 8px 0; font-size: 14px; }
   #custom-form label { margin: 0; }
   #custom-form button, #custom-error { grid-column: 1 / 3; margin: 0; }
 }
+
+/* One shared card for the next question and the previous answer. */
+.quiz-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; flex: none; }
+.quiz-controls fieldset { flex: 1; margin: 0; }
+.quiz-controls .badge { margin-left: auto; white-space: nowrap; }
+.quiz-content { gap: 0; display: flex; }
+.quiz-card { padding: 0; }
+.question-panel { padding: 22px 24px; text-align: center; }
+.result-card { border: 0; border-top: 1px solid #465063; border-radius: 0; background: none; padding: 20px 24px; text-align: left; }
+#solution { font-size: 36px; line-height: 1.2; }
+.result-card .section-heading { gap: 10px; }
+@media (max-width: 650px) {
+  .quiz-controls { gap: 8px; }
+  .quiz-controls fieldset { flex-basis: 100%; }
+  .question-panel, .result-card { padding: 16px 14px; }
+  #solution { font-size: 28px; }
+}
+@media (max-height: 650px) {
+  .question-panel, .result-card { padding: 12px 14px; }
+}
+@media (min-width: 651px) and (max-height: 650px) {
+  .quiz-content:has(.result-card:not([hidden])) { display: flex; }
+  .quiz-card:has(.result-card:not([hidden])) { display: grid; grid-template-columns: 1fr 1fr; align-items: center; }
+  .quiz-card:has(.result-card:not([hidden])) .result-card { border-top: 0; border-left: 1px solid #465063; }
+  #solution { font-size: 30px; }
+}
