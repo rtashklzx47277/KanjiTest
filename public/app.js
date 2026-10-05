@@ -75,7 +75,7 @@ function renderQuiz() {
     lastResult = null;
     const correct = round.results.filter(item => item.correct).length;
     $('#round-score').textContent = round.results.length ? `正確率 ${(correct / round.results.length * 100).toFixed(1)}%` : '正確率 —';
-    $('#round-totals').textContent = `已答 ${round.results.length} 題 · 正確 ${correct} · 錯誤 ${round.results.length - correct}`;
+    $('#round-totals').textContent = `已答 ${round.results.length} 題`;
     $('#retry-wrong').disabled = !round.results.some((item, index) => !item.correct && !isKanaOnly(round.words[index].question));
     $('#round-empty').hidden = round.results.length > 0;
     renderRoundResults();
