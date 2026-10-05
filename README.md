@@ -81,6 +81,7 @@ Direct Upload 專案不能直接改成 Git integration，應先選定管理方�
 - 儲存失敗不會把記憶體中的操作誤報成成功；資料損毀時停止覆寫，仍可匯出原始內容供復原。
 - 舊 PostgreSQL 資料不會自動移到瀏覽器。若有需要保留的個人資料，需另外匯出並轉為新版 JSON，再用匯入功能載入。
 - localStorage 依網站 origin 隔離；預覽網址、正式網址、不同自訂網域之間需透過匯出／匯入轉移。
+- `/quiz`、`/bookmarks`、`/words` 使用 Pages 的內建 SPA fallback；不將路由 rewrite 到會觸發 canonical redirect 的 `/index.html`。
 
 ## 結構
 
