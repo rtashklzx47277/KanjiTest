@@ -1,0 +1,428 @@
+{
+  "1257240:きらい": {
+    "question": "嫌い",
+    "english": [
+      "disliking",
+      "hating",
+      "detesting"
+    ],
+    "chinese": "不喜歡；討厭；厭惡"
+  },
+  "1240825:つとめる": {
+    "question": "勤める",
+    "english": [
+      "to work (for, at, in)",
+      "to be employed (at)",
+      "to serve (as)"
+    ],
+    "chinese": "任職；工作；受僱"
+  },
+  "2871532:がつ": {
+    "question": "月",
+    "english": [
+      "month (of the year)"
+    ],
+    "chinese": "月（月份，接在數字後）"
+  },
+  "1003390:きちっと": {
+    "question": "きちっと",
+    "english": [
+      "properly",
+      "accurately",
+      "exactly",
+      "precisely",
+      "regularly"
+    ],
+    "chinese": "確實地；準確地；整齊地"
+  },
+  "2872968:と": {
+    "question": "と",
+    "english": [
+      "promoted pawn"
+    ],
+    "chinese": "升變後的步兵（將棋）"
+  },
+  "1156410:いがい": {
+    "question": "意外",
+    "english": [
+      "unexpected",
+      "surprising",
+      "unanticipated",
+      "strange",
+      "unforeseen"
+    ],
+    "chinese": "意外；出人意料"
+  },
+  "1184580:したび": {
+    "question": "下火",
+    "english": [
+      "dying down (of a fire)",
+      "waning"
+    ],
+    "chinese": "火勢減弱；衰退；衰落"
+  },
+  "2872264:すべらか": {
+    "question": "滑らか",
+    "english": [
+      "smooth (of hair, skin, etc.)",
+      "glassy",
+      "silky",
+      "glossy"
+    ],
+    "chinese": "光滑；滑順（頭髮、皮膚等）"
+  },
+  "1244310:にがい": {
+    "question": "苦い",
+    "english": [
+      "bitter (taste)"
+    ],
+    "chinese": "苦的"
+  },
+  "2873066:いきさつ": {
+    "question": "経緯",
+    "english": [
+      "circumstances",
+      "sequence of events",
+      "how things got this way",
+      "details",
+      "particulars"
+    ],
+    "chinese": "事情的經過；來龍去脈"
+  },
+  "1251880:つながる": {
+    "question": "繋がる",
+    "english": [
+      "to be connected (to)",
+      "to be joined together",
+      "to be linked",
+      "to be tied together",
+      "to lead (to)"
+    ],
+    "chinese": "連接；相連；連通"
+  },
+  "1274640:こうへい": {
+    "question": "公平",
+    "english": [
+      "fair",
+      "impartial",
+      "just",
+      "objective",
+      "disinterested",
+      "unprejudiced"
+    ],
+    "chinese": "公平；公正；客觀"
+  },
+  "1282570:こうざん": {
+    "question": "鉱山",
+    "english": [
+      "mine (gold, coal, etc.)"
+    ],
+    "chinese": "礦山；礦場"
+  },
+  "1283220:たかまる": {
+    "question": "高まる",
+    "english": [
+      "to rise",
+      "to swell",
+      "to intensify",
+      "to increase",
+      "to grow stronger",
+      "to get higher"
+    ],
+    "chinese": "增高；提高；高漲；增強"
+  },
+  "1598820:とどめる": {
+    "question": "留める",
+    "english": [
+      "to stop",
+      "to halt",
+      "to hold back",
+      "to cease"
+    ],
+    "chinese": "阻止；制止；攔住；停止"
+  },
+  "2872098:しあい": {
+    "question": "しあい",
+    "english": [
+      "fight to the death",
+      "mortal combat",
+      "deathmatch"
+    ],
+    "chinese": "死鬥；殊死戰"
+  },
+  "1317490:じかく": {
+    "question": "自覚",
+    "english": [
+      "self-awareness",
+      "awareness (of one's position, abilities, duty, etc.)",
+      "consciousness",
+      "realization"
+    ],
+    "chinese": "自覺；意識到"
+  },
+  "1331590:しゅうぎょう": {
+    "question": "就業",
+    "english": [
+      "starting work (for the day)"
+    ],
+    "chinese": "開始工作；就業"
+  },
+  "1338710:でむかえ": {
+    "question": "出迎え",
+    "english": [
+      "(going out and) receiving (someone)",
+      "(heading out and) meeting",
+      "picking up",
+      "welcoming"
+    ],
+    "chinese": "迎接；接人"
+  },
+  "1345020:じょおう": {
+    "question": "女王",
+    "english": [
+      "queen",
+      "female monarch",
+      "female sovereign"
+    ],
+    "chinese": "女王"
+  },
+  "1345020:にょおう": {
+    "question": "女王",
+    "english": [
+      "queen",
+      "female monarch",
+      "female sovereign"
+    ],
+    "chinese": "女王"
+  },
+  "1360910:こころえ": {
+    "question": "心得",
+    "english": [
+      "knowledge (of a skill, art, etc.)",
+      "proficiency",
+      "understanding",
+      "command",
+      "experience"
+    ],
+    "chinese": "知識；熟悉；經驗；須知"
+  },
+  "1362640:ふかい": {
+    "question": "深い",
+    "english": [
+      "deep (hole, forest, snow, etc.)"
+    ],
+    "chinese": "深的"
+  },
+  "1365980:すすむ": {
+    "question": "進む",
+    "english": [
+      "to advance (spatially)",
+      "to go forward",
+      "to move forward"
+    ],
+    "chinese": "前進；向前"
+  },
+  "1385900:おりかえす": {
+    "question": "折り返す",
+    "english": [
+      "to turn up (hem, sleeves, etc.)",
+      "to fold back (e.g. a page)"
+    ],
+    "chinese": "折回；翻折；返回"
+  },
+  "1386350:せつやく": {
+    "question": "節約",
+    "english": [
+      "saving (e.g. time, money, resources)",
+      "economising",
+      "economizing"
+    ],
+    "chinese": "節約；節省"
+  },
+  "1400800:あい": {
+    "question": "相",
+    "english": [
+      "together",
+      "mutually",
+      "reciprocally",
+      "equally"
+    ],
+    "chinese": "相互；一起；共同"
+  },
+  "1414110:だいしょう": {
+    "question": "大小",
+    "english": [
+      "size",
+      "dimension",
+      "magnitude"
+    ],
+    "chinese": "大小；尺寸"
+  },
+  "1427420:ちょうめ": {
+    "question": "丁目",
+    "english": [
+      "nth district of a town",
+      "nth city block"
+    ],
+    "chinese": "第幾街區（日本地址用語）"
+  },
+  "1432880:つうじる": {
+    "question": "通じる",
+    "english": [
+      "to be open (to traffic)",
+      "to lead (to)",
+      "to connect (to)",
+      "to run (from, between; e.g. bus service)",
+      "to extend (up to)",
+      "to go (to)",
+      "to reach"
+    ],
+    "chinese": "連通；通行；通達；溝通"
+  },
+  "2872473:ばり": {
+    "question": "尿",
+    "english": [
+      "urine"
+    ],
+    "chinese": "尿；尿液"
+  },
+  "1482360:ばんち": {
+    "question": "番地",
+    "english": [
+      "lot number",
+      "house number",
+      "street number"
+    ],
+    "chinese": "地號；門牌號碼"
+  },
+  "1487800:ひっき": {
+    "question": "筆記",
+    "english": [
+      "writing down",
+      "taking notes",
+      "copying",
+      "noting"
+    ],
+    "chinese": "書寫；記錄；做筆記"
+  },
+  "1985490:ぐるみ": {
+    "question": "包み",
+    "english": [
+      "including (all of)",
+      "-wide (e.g. company-wide)",
+      "with (everyone)",
+      "(concerning) the entirety of",
+      "all of"
+    ],
+    "chinese": "包含全部；連同；整個"
+  },
+  "1530080:むじゃき": {
+    "question": "無邪気",
+    "english": [
+      "innocent",
+      "childlike",
+      "sweet and innocent",
+      "artless"
+    ],
+    "chinese": "天真；單純"
+  },
+  "1544380:よち": {
+    "question": "余地",
+    "english": [
+      "space",
+      "room",
+      "unused land"
+    ],
+    "chinese": "空間；餘地"
+  },
+  "1551300:たちよる": {
+    "question": "立ち寄る",
+    "english": [
+      "to drop by",
+      "to stop by",
+      "to drop in",
+      "to visit briefly (on the way somewhere)"
+    ],
+    "chinese": "順便拜訪；中途停留"
+  },
+  "1551530:たてる": {
+    "question": "立てる",
+    "english": [
+      "to stand (something) up",
+      "to put upright",
+      "to set up",
+      "to erect",
+      "to raise",
+      "to turn up",
+      "to plant"
+    ],
+    "chinese": "豎起；立起；樹立；搭建；架設"
+  },
+  "2872558:かける": {
+    "question": "翔る",
+    "english": [
+      "to soar",
+      "to fly"
+    ],
+    "chinese": "飛翔；翱翔"
+  },
+  "1579720:さびしい": {
+    "question": "寂しい",
+    "english": [
+      "lonely (e.g. person, feeling)",
+      "lonesome",
+      "forlorn"
+    ],
+    "chinese": "孤獨；寂寞；冷清；荒涼"
+  },
+  "1579720:さみしい": {
+    "question": "寂しい",
+    "english": [
+      "lonely (e.g. person, feeling)",
+      "lonesome",
+      "forlorn"
+    ],
+    "chinese": "孤獨；寂寞；冷清；荒涼"
+  },
+  "1794390:さまさま": {
+    "question": "様々",
+    "english": [
+      "all thanks to ...",
+      "... is a lifesaver",
+      "(one) couldn't do without ...",
+      "our gracious ...",
+      "hats off to ..."
+    ],
+    "chinese": "全靠……；多虧……（表示感激）"
+  },
+  "1604050:まっくろ": {
+    "question": "真っ黒",
+    "english": [
+      "pitch-black",
+      "jet-black",
+      "black"
+    ],
+    "chinese": "漆黑；墨黑"
+  },
+  "1983740:つうずる": {
+    "question": "通ずる",
+    "english": [
+      "to be open (to traffic)",
+      "to lead (to)",
+      "to connect (to)",
+      "to run (from, between; e.g. bus service)",
+      "to extend (up to)",
+      "to go (to)",
+      "to reach"
+    ],
+    "chinese": "連通；通行；溝通"
+  },
+  "1482860:ひ": {
+    "question": "否",
+    "english": [
+      "disapproval",
+      "disagreement"
+    ],
+    "chinese": "否定；不贊同"
+  }
+}

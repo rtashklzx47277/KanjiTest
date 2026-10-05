@@ -6,13 +6,18 @@
 - Traditional Chinese gloss translations: JMdict-derived content © Y1Z, prepared with LLM assistance. These glosses may contain errors.
 - JLPT estimates: Jonathan Waller's JLPT Resources (CC BY), via [stephenmk/yomitan-jlpt-vocab](https://github.com/stephenmk/yomitan-jlpt-vocab) (CC BY-SA 4.0). N1–N5 are community estimates, not an official JLPT vocabulary list.
 
-KanjiTest modifications: select entries with JLPT levels and Traditional Chinese glosses; choose a regular written form and its compatible readings; exclude marked search-only/rare/irregular forms; retain the first Chinese sense; deduplicate against the original vocabulary; assign stable JMdict IDs; restructure as a JavaScript array. The modified extended dataset remains **CC BY-SA 4.0**, with no additional restrictions. This notice concerns the extended dataset; the original `words.js` is preserved separately.
+Archived `jlpt-extended.js` records the first imported subset with stable JMdict IDs. Its original filtering incorrectly removed normal jukujikun and split some shared written forms into incomplete reading sets. It is retained for provenance and saved-ID compatibility, not used without corrections.
+
+The live `catalog.js` applies `vocabulary-audit.js`, derived from official JMdict XML created **2026-10-05** (© EDRDG, CC BY-SA 4.0). It respects written-form/reading/sense restrictions, restores normal jukujikun, accepts compatible modern reading variants, deduplicates quiz written forms, and aligns Chinese glosses to the corresponding senses in the pinned translation source. Assistant-reviewed translation corrections are in `chinese-corrections.json` and `chinese-sense-corrections.json`. Different reading meanings are labelled separately. All original source IDs remain available, and duplicate forms use the easiest existing community JLPT estimate. See [AUDIT.md](AUDIT.md) for exact scope and limitations. These modified/derived vocabulary files and the downloadable corrected extended dataset remain **CC BY-SA 4.0**, with no additional restrictions. The original `words.js` is preserved separately.
 
 Reproduction with Python 3.14 (no third-party packages):
 1. Download `tomoshi-dict-open.db.zst` from the pinned [release](https://github.com/tomoshi-app/tomoshi-dict-data/releases/tag/v2026-09-02).
 2. Verify compressed SHA-256 `7153dfd7a8e42e2d920308370eac90cf9f2e4b4cfe67fb9a86e9aa1c89494073`, then decompress using `compression.zstd`.
-3. Run `python tools/import-tomoshi.py path/to/tomoshi-dict-open.db`.
+3. Keep the two archived source arrays in this repository. Download and retain the official XML version/checksum listed in `AUDIT.md`.
+4. Run `python tools/audit-vocabulary.py JMdict_e.gz path/to/tomoshi-dict-open.db audit-output` to reproduce the corrected live overrides and per-record report.
+
+For future candidate imports, use `python tools/import-tomoshi.py path/to/tomoshi-dict-open.db candidates.js`, then audit against official XML before adding records. The corrected importer intentionally does not reproduce the historic faulty filter and cannot overwrite the stable-ID archive.
 
 No example sentences, Wiktionary definitions, stroke-order data, logos, or proprietary application data are imported.
 
-The playable catalog excludes kana-only headwords (including punctuation, long vowels and half-width kana). The full source arrays and downloadable extended data remain available for attribution, reproduction and compatibility with previously saved IDs; excluded headwords are not sampled in quizzes or listed in collection queries.
+The playable catalog excludes kana-only headwords (including punctuation, long vowels and half-width kana) and merges identical written forms. The full source arrays remain available for provenance and saved-ID compatibility. The downloadable extended data contains corrected representations of every extended source ID; excluded/duplicate headwords are not independently sampled in quizzes or listed in API collection queries.

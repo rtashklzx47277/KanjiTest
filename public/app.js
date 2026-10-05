@@ -291,6 +291,14 @@ document.addEventListener('click', (event) => {
   const url = new URL(link.href);
   if (url.origin !== location.origin || !['/quiz', '/bookmarks', '/words'].includes(url.pathname)) return;
   event.preventDefault();
+  if (link.classList.contains('brand')) {
+    cancelCheck();
+    try {
+      practice.clearRound();
+      category = 'all';
+      $('#round-count').value = '10';
+    } catch (error) { showNotice(errorMessage(error), true); return; }
+  }
   navigate(url.pathname + url.search);
 });
 window.addEventListener('popstate', () => { cancelCheck(); renderRoute(); });

@@ -11,14 +11,15 @@ test('kana filter handles both scripts, half-width, combining marks, punctuation
   for (const text of ['家族', '強いて', '取り扱う', '100メートル', 'Ａ型', 'ABC', 'ー', '']) assert.equal(isKanaOnly(text), false, text);
 });
 
-test('active catalog and API collections exclude 878 kana-only words while source IDs stay stable', async () => {
-  assert.equal(quizWords.length, 7111);
-  assert.equal(catalog.length - quizWords.length, 878);
-  assert.deepEqual(Object.fromEntries(['N5','N4','N3','N2','N1'].map(level => [level, quizWords.filter(word => word.category === level).length])), { N5:740, N4:557, N3:1614, N2:1471, N1:2729 });
+test('active catalog and API exclude kana and duplicate written forms while source IDs stay stable', async () => {
+  assert.equal(quizWords.length, 6896);
+  assert.equal(catalog.filter(word => isKanaOnly(word.question)).length, 878);
+  assert.equal(catalog.length - quizWords.length, 1093);
+  assert.deepEqual(Object.fromEntries(['N5','N4','N3','N2','N1'].map(level => [level, quizWords.filter(word => word.category === level).length])), { N5:685, N4:540, N3:1560, N2:1460, N1:2651 });
   assert.ok(quizWords.every(word => !isKanaOnly(word.question)));
   const response = await handleApi(new Request('https://example.test/api/words?limit=1000'));
   const payload = await response.json();
-  assert.equal(payload.total, 7111);
+  assert.equal(payload.total, 6896);
   assert.ok(payload.data.every(word => !isKanaOnly(word.question)));
 });
 

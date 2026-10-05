@@ -1,5 +1,7 @@
 """Extract the licensed JLPT/Traditional Chinese subset from the pinned SQLite release.
-Usage: python tools/import-tomoshi.py path/to/tomoshi-dict-open.db
+Usage: python tools/import-tomoshi.py path/to/tomoshi-dict-open.db output.js
+Produces new candidate data, never overwrites the archived stable-ID source.
+Run audit-vocabulary.py against official JMdict before using candidates in quizzes.
 Download and compressed checksum are documented in data/NOTICE.md.
 """
 import collections
@@ -9,7 +11,10 @@ import sqlite3
 import sys
 import unicodedata
 
+if len(sys.argv)!=3:raise SystemExit('Usage: python tools/import-tomoshi.py dictionary.db output.js')
 root = pathlib.Path(__file__).resolve().parents[1]
+target=pathlib.Path(sys.argv[2]).resolve()
+if target == (root/'data/jlpt-extended.js').resolve():raise SystemExit('Use a candidate output path; archived source IDs must stay stable.')
 original = json.loads((root / 'data/words.js').read_text(encoding='utf-8').split('export default ', 1)[1].rstrip(';\n'))
 def normalize(text):
     return ''.join(chr(ord(c)-0x60) if '\u30a1' <= c <= '\u30f6' else c for c in unicodedata.normalize('NFKC', text))
@@ -25,14 +30,16 @@ for entry_id, level, raw, zh_raw in connection.execute(query):
     entry, zh = json.loads(raw), json.loads(zh_raw)
     # Ignore search-only, obsolete, irregular and rare forms in reading quizzes.
     kanji = [f for f in entry['kanji'] if not f['info']]
-    kana = [f for f in entry['kana'] if not f['info']]
+    # gikun includes regular jukujikun such as 果物/くだもの. It is not an error tag.
+    kana = [f for f in entry['kana'] if all(i == 'gikun (meaning as reading) or jukujikun (special kanji reading)' for i in f['info'])]
     if not kana:
         continue
     form = next((f for f in kanji if f['priority']), kanji[0] if kanji else None)
     question = form['text'] if form else kana[0]['text']
     readings = list(dict.fromkeys(f['text'] for f in kana if not f['restricted_to'] or question in f['restricted_to']))
-    readings = [r for r in readings if (normalize(question), normalize(r)) not in seen]
-    if not readings:
+    # Keep the entire accepted reading set. Removing only an existing reading
+    # creates another identical question that wrongly accepts only rare variants.
+    if not readings or all((normalize(question), normalize(r)) in seen for r in readings):
         continue
     # A concise first sense makes the reading exercise useful without hiding a long dictionary entry.
     first = next(iter(zh.get('senses', {}).values()), {})
@@ -41,6 +48,6 @@ for entry_id, level, raw, zh_raw in connection.execute(query):
         continue
     words.append(dict(id=f'jmdict:{entry_id}', category=level, question=question, answer='/'.join(readings), explanation=explanation))
     seen.update((normalize(question), normalize(r)) for r in readings)
-(root / 'data/jlpt-extended.js').write_text('// CC BY-SA 4.0. Attribution and modifications: ./NOTICE.md\nexport default ' + json.dumps(words, ensure_ascii=False, indent=2) + ';\n', encoding='utf-8')
+target.write_text('// CC BY-SA 4.0. Attribution and modifications: ./NOTICE.md\nexport default ' + json.dumps(words, ensure_ascii=False, indent=2) + ';\n', encoding='utf-8')
 print('Added:', len(words), dict(collections.Counter(w['category'] for w in words)))
 print('Combined:', len(original) + len(words), dict(collections.Counter(w['category'] for w in original + words)))

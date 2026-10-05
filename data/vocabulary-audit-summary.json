@@ -1,0 +1,18 @@
+{
+  "sourceRecords": 7989,
+  "dictionaryMatched": 7975,
+  "constructionVerified": 14,
+  "excludedUnresolved": 0,
+  "changedRecords": 1810,
+  "answerChanges": 1752,
+  "glossChanges": 878,
+  "duplicateWrittenForms": 205,
+  "jmdictSha256": "ae62e02885b73807b49705f92c7050143b424fa87c6ede6efbc6eed8c317692b",
+  "jmdictDate": "2026-10-05",
+  "chineseStatusCounts": {
+    "original primary gloss reviewed by assistant; complete sense review pending": 774,
+    "multiple reading meanings aligned to Chinese source; independent semantic review pending": 816,
+    "assistant reviewed against dictionary English senses; not professional review": 50,
+    "sense-aligned to pinned Chinese source; independent semantic review pending": 6349
+  }
+}

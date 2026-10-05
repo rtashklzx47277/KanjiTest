@@ -37,8 +37,11 @@ export function questionWeight(stats = { correct: 0, wrong: 0 }) {
 // Weighted sampling without replacement: each draw removes its selected word.
 export function selectRound(words, count, wordStats = {}, random = Math.random) {
   if (!Number.isInteger(count) || count < 1 || count > 100) throw new Error('題數須為 1 至 100 的整數。');
-  const candidates = [...new Map(words.filter(word => !isKanaOnly(word.question)).map(word => [word.id, word])).values()]
-    .map(word => ({ word, weight: questionWeight(wordStats[word.id]) }));
+  const candidates = uniqueQuizWords(words)
+    .map(word => {
+      const stats = (word.aliasIds ?? [word.id]).reduce((total, id) => ({ correct: total.correct + (wordStats[id]?.correct ?? 0), wrong: total.wrong + (wordStats[id]?.wrong ?? 0) }), { correct: 0, wrong: 0 });
+      return { word, weight: questionWeight(stats) };
+    });
   const selected = [];
   while (candidates.length && selected.length < count) {
     let ticket = Math.min(1 - Number.EPSILON, Math.max(0, random())) * candidates.reduce((sum, item) => sum + item.weight, 0);
@@ -47,6 +50,17 @@ export function selectRound(words, count, wordStats = {}, random = Math.random) 
     selected.push(candidates.splice(index, 1)[0].word);
   }
   return selected;
+}
+
+// A visible written form is one question even when multiple dictionary IDs represent it.
+export function uniqueQuizWords(words) {
+  const unique = new Map();
+  for (const word of words) {
+    if (word.quizEligible === false || isKanaOnly(word.question)) continue;
+    const key = word.question.normalize('NFKC');
+    if (!unique.has(key)) unique.set(key, word);
+  }
+  return [...unique.values()];
 }
 
 export function validateCustomWord(input) {
@@ -144,8 +158,17 @@ export function validateState(input, builtins) {
   const legacyHistory = validateHistory(input.history);
   // Ignore the removed autoBookmarkWrong preference in older saved data and backups.
   // Migrate available legacy attempts into counters, then stop retaining the history feature.
+  let round = validateRound(input.round);
+  if (round && !round.finished) {
+    const byId = new Map(builtins.map(word => [word.id, word]));
+    const graded = round.words.slice(0, round.results.length);
+    const seen = new Set(graded.map(word => word.question.normalize('NFKC')));
+    const pending = uniqueQuizWords(round.words.slice(round.results.length).map(word => byId.get(word.id) ?? word)).filter(word => !seen.has(word.question.normalize('NFKC')));
+    const words = [...graded, ...pending];
+    round = words.length ? { ...round, words } : null;
+  }
   return { version: 1, customWords, bookmarkIds,
-    wordStats: validateStats(input.wordStats, legacyHistory), round: validateRound(input.round) };
+    wordStats: validateStats(input.wordStats, legacyHistory), round };
 }
 
 export class LocalRepository {
@@ -179,7 +202,7 @@ export class LocalRepository {
     if (!CATEGORIES.includes(category)) throw new Error('不存在的題目分類。');
     const words = category === 'bookmark' ? this.bookmarks : category === 'custom' ? this.customWords
       : category === 'all' ? this.allWords : this.builtins.filter((word) => word.category === category);
-    return words.filter(word => !isKanaOnly(word.question));
+    return uniqueQuizWords(words);
   }
 
   save(nextState) {
@@ -220,7 +243,8 @@ export class LocalRepository {
   }
   startRound(category, count, { words, review = false, random = Math.random } = {}) {
     if (!CATEGORIES.includes(category)) throw new Error('不存在的題目分類。');
-    const selected = selectRound(words ?? this.wordsIn(category), count, this.state.wordStats, random);
+    const source = words?.map(word => this.builtins.find(item => item.id === word.id) ?? word) ?? this.wordsIn(category);
+    const selected = selectRound(source, count, this.state.wordStats, random);
     if (!selected.length) throw new Error('這個分類還沒有單字。');
     this.save({ ...this.state, round: { category, requestedCount: count, review, words: selected, position: 0, results: [], finished: false } });
   }
