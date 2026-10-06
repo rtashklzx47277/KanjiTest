@@ -2,6 +2,10 @@
 
 Cloudflare Pages 網頁＋Pages Functions HTTP API。無登入、無 PostgreSQL；自訂單字、書籤、測驗進度、單字累計統計與本輪答題紀錄保存在瀏覽器的 `localStorage`。
 
+完整專案文檔：[文檔入口](docs/README.md)、[架構](docs/architecture.md)、[開發](docs/development.md)、[工具箱與發布](docs/deployment.md)、[資料與題庫](docs/data.md)、[API](docs/api.md)。
+
+Windows 雙擊根目錄 `toolbox.cmd`，或 `npm run toolbox`，開啟本機維護介面。提供驗證、預覽部署、正式部署及提交／推送；部署按鈕都先跑測試與建置。
+
 ## 功能
 
 - 6,896 個不同字形的可測驗單字：N5 685、N4 540、N3 1,560、N2 1,460、N1 2,651。排除 878 個純假名來源，另合併 215 筆重複字形。完整 7,989 筆來源 ID 保留供舊書籤與紀錄相容。
@@ -24,8 +28,7 @@ Cloudflare Pages 網頁＋Pages Functions HTTP API。無登入、無 PostgreSQL�
 需要 Node.js 22 或以上。應用與測試沒有 npm 套件相依。
 
 ```sh
-npm test
-npm run build
+npm run verify
 npm run dev
 ```
 
@@ -65,15 +68,19 @@ POST JSON：`{"wordId":"builtin:3","answer":"かぞく"}`。
 ### 本機直接上傳
 
 ```sh
-npx wrangler@4 login
-npx wrangler@4 pages project create kanjitest --production-branch=main
+npx --yes wrangler@4 login
+npm run deploy:preview
 npm run deploy
 ```
 
-`wrangler.toml` 指定輸出目錄 `dist`；Functions 從 repo 根的 `functions/` 編譯。`dist/_routes.json` 只讓 `/api/*` 呼叫 Functions，HTML／JS／CSS 不消耗 Functions 請求額度。預覽版：
+使用現有 Direct Upload 專案 `kanjitest`，不需每次建立新專案。`wrangler.toml` 指定輸出目錄 `dist`；Functions 從 repo 根的 `functions/` 編譯。`dist/_routes.json` 只讓 `/api/*` 呼叫 Functions。工具箱、CLI 及 CI 共用驗證流程，部署前重新測試與建置。
+
+部署設定見 `tools/deployment.json`：Cloudflare 正式標籤為 `main`、預覽為 `preview`；允許的正式 Git 來源為 `main` 與目前遷移分支。其餘分支可部署預覽，不能用工具箱或預設 CLI 發布正式站。Git 提交／推送及 PR 合併不會被部署操作代為執行。
+
+若要從命令列啟動工具箱：
 
 ```sh
-npx wrangler@4 pages deploy dist --project-name=kanjitest --branch=preview
+npm run toolbox
 ```
 
 ### GitHub 整合
@@ -121,6 +128,12 @@ lib/api.js             無狀態的 HTTP API handler
 functions/api/         Cloudflare Pages Functions 路由
 tools/build.mjs        安全嵌入題庫並產出 dist
 tools/serve.mjs        本機靜態站與 API 開發伺服器
+tools/workflows.mjs    工具箱與 CLI 共用的驗證／發布流程
+tools/toolbox.mjs      本機維護 HTTP 服務
+tools/toolbox/         工具箱介面，不部署至公開網站
+tools/deployment.json 發布環境與允許 Git 分支
+toolbox.cmd            Windows 雙擊啟動器
+docs/                  架構、開發、發布、資料與 API 文檔
 tools/import-tomoshi.py SQLite 候選題庫篩選工具
 tools/audit-vocabulary.py 官方 JMdict 校驗與逐筆 CSV／JSON 報告
 data/vocabulary-audit.js 穩定 ID 的校正版覆寫

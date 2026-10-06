@@ -8,6 +8,9 @@
     "build": "node tools/build.mjs",
     "dev": "node tools/serve.mjs",
     "test": "node --test",
-    "deploy": "npm run test && npm run build && npx wrangler@4 pages deploy dist --project-name=kanjitest --branch=main"
+    "verify": "node tools/verify.mjs",
+    "toolbox": "node tools/toolbox.mjs",
+    "deploy:preview": "node tools/deploy.mjs preview",
+    "deploy": "node tools/deploy.mjs production"
   }
 }

@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="toolbox-token" content="{{TOKEN}}"><title>KanjiTest 工具箱</title><link rel="stylesheet" href="/toolbox.css"><script src="/toolbox.js" defer></script></head>
+<body><main>
+  <header><p class="eyebrow">KANJITEST · 本機維護</p><h1>專案工具箱</h1><p>測試、預覽與正式發布，使用同一套驗證流程。</p></header>
+  <section class="project" aria-label="目前專案"><div><span>Git 分支</span><strong id="branch">讀取中…</strong></div><div><span>Cloudflare 專案</span><strong id="project">kanjitest</strong></div><p id="root"></p><details><summary>查看尚未提交的變更</summary><pre id="changes"></pre></details></section>
+  <section class="grid" aria-label="操作">
+    <article><h2>測試與建置</h2><p>執行所有回歸測試，通過後產生網站檔案。</p><button data-action="verify">開始驗證</button></article>
+    <article><h2>部署預覽版</h2><p>測試 → 建置 → 上傳預覽環境，供發布前操作確認。</p><button data-action="preview">部署預覽版</button></article>
+    <article><h2>部署正式版</h2><p>測試 → 建置 → 更新 kanjitest.pages.dev。</p><button data-action="production">部署正式版</button><p id="branch-note" class="note"></p></article>
+    <article><h2>提交與推送</h2><p>暫存本專案所有變更，提交並推送目前分支；網站部署另行執行。</p><label for="commit-message">提交訊息</label><input id="commit-message" maxlength="500" placeholder="例如：調整測驗排版"><button data-action="push">提交／推送</button></article>
+  </section>
+  <section class="execution" aria-labelledby="execution-heading"><div class="execution-heading"><h2 id="execution-heading">執行紀錄</h2><span id="state" role="status">待命</span></div><p id="result" role="status"></p><div id="links"></div><pre id="log" tabindex="0" aria-label="執行輸出">選擇操作後，這裡會顯示進度與結果。</pre></section>
+  <footer>只在本機開啟，不會上傳至網站。部署需先完成 Wrangler 登入；推送使用現有 Git 認證。</footer>
+</main></body></html>

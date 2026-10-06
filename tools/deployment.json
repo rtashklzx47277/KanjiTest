@@ -1,0 +1,6 @@
+{
+  "projectName": "kanjitest",
+  "productionBranch": "main",
+  "previewBranch": "preview",
+  "allowedProductionGitBranches": ["main", "codex/cloudflare-local-storage"]
+}
