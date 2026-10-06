@@ -1,4 +1,5 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawn } from 'node:child_process';
 
@@ -9,14 +10,19 @@ const safeName = value => typeof value === 'string' && /^[a-zA-Z0-9][a-zA-Z0-9_.
 if (![deployment.projectName, deployment.productionBranch, deployment.previewBranch, ...deployment.allowedProductionGitBranches].every(safeName)
   || deployment.productionBranch === deployment.previewBranch) throw new Error('部署設定不正確。');
 
-// npm/npx are .cmd on Windows. Only fixed, validated arguments use that shell;
-// Git commit messages always travel as argv to git.exe, never as shell text.
+// Invoke npm's JS entry point on Windows: .cmd files require a shell, and argv
+// would otherwise be concatenated. Git and all user text also remain literal argv.
 export function runCommand(args, log = () => {}) {
   return new Promise((resolve, reject) => {
-    const [command, ...parameters] = args;
-    const useShell = process.platform === 'win32' && ['npm', 'npx'].includes(command);
+    let [command, ...parameters] = args;
+    if (['npm', 'npx'].includes(command)) {
+      const candidates = [process.env.npm_execpath && join(dirname(process.env.npm_execpath), `${command}-cli.js`), join(dirname(process.execPath), 'node_modules', 'npm', 'bin', `${command}-cli.js`)];
+      const cli = candidates.find(path => path && existsSync(path));
+      if (cli) { parameters = [cli, ...parameters]; command = process.execPath; }
+      else if (process.platform === 'win32') { reject(new Error('找不到 npm/npx 的 JS 入口，請完整安裝 Node.js（含 npm），或由 npm run toolbox 啟動。')); return; }
+    }
     const child = spawn(command, parameters, {
-      cwd: ROOT, shell: useShell, windowsHide: true,
+      cwd: ROOT, shell: false, windowsHide: true,
       stdio: ['ignore', 'pipe', 'pipe'], env: { ...process.env, NO_COLOR: '1', GIT_TERMINAL_PROMPT: '0' },
     });
     let output = '';
