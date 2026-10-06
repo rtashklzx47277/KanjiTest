@@ -53,9 +53,9 @@
       </div></div></div></div>
       <div id="round-summary" class="round-summary" hidden>
         <div class="section-heading"><h1>本輪結果</h1><span id="round-score" class="badge" aria-live="polite"></span></div>
-        <div class="round-overview"><p id="round-totals" class="history-note"></p><div class="round-actions"><button id="retry-wrong" type="button">重練本輪錯題</button><button id="another-round" type="button">再來一輪</button><button id="reselect-round" class="secondary" type="button">重新選擇難度、題數</button></div></div>
+        <div class="round-overview"><div class="round-filters"><p id="round-totals" class="history-note"></p><label class="wrong-only-label"><input id="round-wrong-only" type="checkbox" aria-controls="round-table round-empty round-pagination">只顯示錯題</label></div><div class="round-actions"><button id="retry-wrong" type="button">重練本輪錯題</button><button id="another-round" type="button">再來一輪</button><button id="reselect-round" class="secondary" type="button">重新選擇難度、題數</button></div></div>
         <div class="table-scroll"><table id="round-table"><caption class="sr-only">本輪答題紀錄</caption><thead><tr><th>題號</th><th>單字</th><th>結果</th><th>你的答案</th><th>正確讀音</th><th>操作</th></tr></thead><tbody></tbody></table></div>
-        <p id="round-empty" class="empty" hidden>這一輪尚未作答。</p>
+        <p id="round-empty" class="empty" role="status" hidden>這一輪尚未作答。</p>
         <div id="round-pagination" class="pagination"><button id="round-prev" class="secondary" type="button">上一頁</button><span id="round-page" aria-live="polite"></span><button id="round-next" class="secondary" type="button">下一頁</button></div>
       </div>
     </section>

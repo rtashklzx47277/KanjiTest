@@ -92,7 +92,6 @@ function renderQuiz() {
     const difficulty = { all: '全部', bookmark: '我的書籤', custom: '自訂單字' }[round.category] ?? round.category;
     $('#round-totals').textContent = `${difficulty} · 已答 ${round.results.length} 題`;
     $('#retry-wrong').disabled = !round.results.some((item, index) => !item.correct && !isKanaOnly(round.words[index].question));
-    $('#round-empty').hidden = round.results.length > 0;
     renderRoundResults();
     return;
   }
@@ -126,6 +125,7 @@ function startRound({ review = false, words, count = Number($('#round-count').va
     category = selectedCategory;
     history.replaceState(null, '', `/quiz?category=${encodeURIComponent(category)}`);
     tablePages.round = 0;
+    $('#round-wrong-only').checked = false;
     $('#yourAnswer').value = '';
     showNotice(repository.readOnly ? '本輪僅在此分頁暫存，重新整理後無法保留。' : '');
     renderRoute();
@@ -209,15 +209,17 @@ function renderTable(kind) {
 }
 function renderRoundResults() {
   const kind = 'round', history = practice.state.round.results;
+  const wrongOnly = $('#round-wrong-only').checked;
+  const visible = history.map((item, index) => ({ item, number: index + 1 })).filter(({ item }) => !wrongOnly || !item.correct);
   const available = document.querySelector('main').getBoundingClientRect().bottom - $(`#${kind}-table`).parentElement.getBoundingClientRect().top - 110;
   const pageSize = Math.max(1, Math.floor(available / (innerWidth <= 650 ? 144 : 72)));
-  const pageCount = Math.max(1, Math.ceil(history.length / pageSize));
+  const pageCount = Math.max(1, Math.ceil(visible.length / pageSize));
   tablePages[kind] = Math.min(tablePages[kind], pageCount - 1);
   const tbody = $(`#${kind}-table tbody`);
   tbody.replaceChildren();
-  for (const [offset, item] of history.slice(tablePages[kind] * pageSize, (tablePages[kind] + 1) * pageSize).entries()) {
+  for (const { item, number } of visible.slice(tablePages[kind] * pageSize, (tablePages[kind] + 1) * pageSize)) {
     const row = document.createElement('tr');
-    const fields = [`${tablePages[kind] * pageSize + offset + 1}`, item.question, item.correct ? '正確' : '錯誤', item.submitted, item.answer];
+    const fields = [`${number}`, item.question, item.correct ? '正確' : '錯誤', item.submitted, item.answer];
     for (const [index, text] of fields.entries()) {
       const cell = document.createElement('td');
       const content = document.createElement(index === 1 ? 'button' : 'span');
@@ -248,9 +250,11 @@ function renderRoundResults() {
     row.append(cell);
     tbody.append(row);
   }
-  $(`#${kind}-table`).hidden = !history.length;
-  $(`#${kind}-pagination`).hidden = !history.length;
-  $(`#${kind}-page`).textContent = `${tablePages[kind] + 1} / ${pageCount} · ${history.length} 題`;
+  $('#round-empty').hidden = visible.length > 0;
+  $('#round-empty').textContent = !history.length ? '這一輪尚未作答。' : '本輪沒有錯題。';
+  $(`#${kind}-table`).hidden = !visible.length;
+  $(`#${kind}-pagination`).hidden = !visible.length;
+  $(`#${kind}-page`).textContent = `${tablePages[kind] + 1} / ${pageCount} · ${visible.length} 題`;
   $(`#${kind}-prev`).disabled = tablePages[kind] === 0;
   $(`#${kind}-next`).disabled = tablePages[kind] === pageCount - 1;
 }
@@ -387,6 +391,7 @@ for (const kind of ['bookmark', 'custom']) {
 }
 window.addEventListener('resize', renderRoute);
 for (const [direction, change] of [['prev', -1], ['next', 1]]) $('#round-' + direction).addEventListener('click', () => { tablePages.round += change; renderRoundResults(); });
+$('#round-wrong-only').addEventListener('change', () => { tablePages.round = 0; renderRoundResults(); });
 function selectSettingsTab(name) {
   for (const panel of ['practice', 'source']) {
     const selected = panel === name;

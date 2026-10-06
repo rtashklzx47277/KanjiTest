@@ -296,6 +296,9 @@ dialog p { margin: 8px 0; font-size: 14px; }
 .result-card dl > div { height: 2.4em; min-height: 2.4em; }
 .result-card dd { line-height: 1.2; }
 .round-overview { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; flex: none; }
+.round-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
+.wrong-only-label { display: inline-flex; align-items: center; gap: 7px; min-height: 32px; font-size: 13px; cursor: pointer; }
+.wrong-only-label input { width: 16px; height: 16px; padding: 0; margin: 0; accent-color: #91b7ff; }
 .round-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; margin: 0 0 0 auto; }
 .row-actions { display: flex; gap: 6px; }
 .row-actions button { font-size: 12px; padding: 4px 8px; }
